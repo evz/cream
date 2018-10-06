@@ -2,4 +2,5 @@
 /keyrings/live/pubring.kbx~
 /keyrings/live/secring.gpg
 __pycache__
-/cream/settings_local.py
+cream/settings_local.py
+/configs/settings_local.py
