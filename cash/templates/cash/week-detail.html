@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load formatting %}
+
+{% block title %}Week of {{ week.start_date|date:"F j, Y" }}{% endblock %}
+
+{% block content %}
+    <h1>
+        Week of {{ week.start_date|date:"F j, Y" }}<br />
+        <span class="label warning">Income: <strong>{{ week.income|format_money }}</strong></span>
+        <span class="label warning">Carry over: <strong>{{ week.carry_over|format_money }}</strong></span>
+        <span class="label warning">Total expenses: <strong>{{ week.total_expenses|format_money }}</strong></span>
+    </h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Budgeted amount</th>
+                <th>Actual amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for expense in week.expense_set.all %}
+                <tr>
+                    <td>
+                        {{ expense.description }}
+                    </td>
+                    <td>
+                        {{ expense.budgeted_amount|format_money }}
+                    </td>
+                    <td>
+                        {% if expense.actual_amount %}
+                            {{ expense.actual_amount|format_money }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

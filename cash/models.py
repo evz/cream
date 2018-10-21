@@ -1,11 +1,13 @@
 from django.db import models
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
+from django.utils.text import slugify
 
 
 class Week(models.Model):
     income = models.FloatField(unique_for_date='start_date')
     start_date = models.DateField()
+    slug = models.SlugField(null=True)
     _carry_over = models.FloatField(null=True, blank=True)
 
     def __str__(self):
@@ -38,6 +40,10 @@ class Week(models.Model):
             return previous_expenses['expenses']
 
         return 0
+
+    def save(self, **kwargs):
+        self.slug = slugify(self.start_date)
+        return super().save(**kwargs)
 
 
 class Expense(models.Model):
