@@ -4,7 +4,33 @@ from .models import Week, Expense
 
 @admin.register(Week)
 class WeekAdmin(admin.ModelAdmin):
-    list_display = ['start_date', 'income', 'carry_over', 'total_expenses']
+    list_display = [
+        'start_date',
+        'formatted_income',
+        'formatted_carry_over',
+        'formatted_total_expenses'
+    ]
+
+    def formatted_income(self, obj):
+        if obj.income:
+            return '${:03.2f}'.format(obj.income)
+        else:
+            return ''
+    formatted_income.short_description = 'Income'
+
+    def formatted_carry_over(self, obj):
+        if obj.carry_over:
+            return '${:03.2f}'.format(obj.carry_over)
+        else:
+            return ''
+    formatted_carry_over.short_description = 'Carry over'
+
+    def formatted_total_expenses(self, obj):
+        if obj.total_expenses:
+            return '${:03.2f}'.format(obj.total_expenses)
+        else:
+            return ''
+    formatted_total_expenses.short_description = 'Total expenses'
 
 
 def duplicate_expense(modeladmin, request, queryset):
