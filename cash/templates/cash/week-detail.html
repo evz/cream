@@ -17,24 +17,55 @@
                 <th>Description</th>
                 <th>Budgeted amount</th>
                 <th>Actual amount</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
             {% for expense in week.expense_set.all %}
+                <form method="POST" action="{% url 'update-expense' expense.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="description" value="{{ expense.description }}" />
+                    <input type="hidden" name="budgeted_amount" value="{{ expense.budgeted_amount }}" />
+                    {% if expense.actual_amount %}
+                        <input type="hidden" name="actual_amount" value="{{ expense.actual_amount }}" />
+                    {% endif %}
+                    <tr>
+                        <td>
+                            {{ expense.description }}
+                        </td>
+                        <td>
+                            {{ expense.budgeted_amount|format_money }}
+                        </td>
+                        <td>
+                            {% if expense.actual_amount %}
+                                {{ expense.actual_amount|format_money }}
+                            {% else %}
+                                <input type="text" name="actual_amount" placeholder="Actual amount ..." />
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button type="submit" class="success button"> <i class="fi-save"> </i> Save</button>
+                        </td>
+                    </tr>
+                </form>
+            {% endfor%}
+            <form method="POST" action="{% url 'create-expense' %}">
+                {% csrf_token %}
                 <tr>
                     <td>
-                        {{ expense.description }}
+                        <input type="text" name="description" placeholder="Description ..." />
                     </td>
                     <td>
-                        {{ expense.budgeted_amount|format_money }}
+                        <input type="text" name="budgeted_amount" placeholder="Budgeted amount ..." />
                     </td>
                     <td>
-                        {% if expense.actual_amount %}
-                            {{ expense.actual_amount|format_money }}
-                        {% endif %}
+                        <input type="text" name="actual_amount" placeholder="Actual amount ..." />
+                    </td>
+                    <td>
+                        <button type="submit" class="success button"> <i class="fi-plus"> </i> Add</button>
                     </td>
                 </tr>
-            {% endfor %}
+            </form>
         </tbody>
     </table>
 {% endblock %}
