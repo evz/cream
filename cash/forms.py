@@ -1,0 +1,2 @@
+class ExpenseForm(object):
+    pass

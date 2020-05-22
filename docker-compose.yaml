@@ -1,0 +1,33 @@
+version: '3'
+services:
+  nginx:
+    image: "nginx:latest"
+    volumes:
+      - static_files:/usr/share/nginx/cream/static:ro
+      - ./configs/nginx.conf:/etc/nginx/conf.d/cream.conf
+      - .:/code
+    ports:
+      - "8080:80"
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/code
+      - static_files:/code/static
+    env_file:
+      - configs/${ENV}.env
+  db:
+    image: "postgres:latest"
+    environment:
+      - POSTGRES_USER=cream
+      - POSTGRES_PASSWORD=cream
+      - POSTGRES_DB=cream
+    volumes:
+      - postgresql:/var/lib/postgresql
+      - postgresql_data:/var/lib/postgresql/data
+
+volumes:
+  postgresql:
+  postgresql_data:
+  static_files:

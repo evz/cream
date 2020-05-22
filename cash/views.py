@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.views.generic import ListView
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
-from django.views.generic.edit import ModelFormMixin, ProcessFormView
+from django.views.generic.edit import ModelFormMixin, ProcessFormView, CreateView, UpdateView
 
 from .models import Week, Expense
 from .forms import ExpenseForm
@@ -34,8 +34,7 @@ class IndexView(ListView):
 
 
 class WeekDetail(CreateUpdateView):
-    model = Expense
-    form_class = ExpenseForm
+    model = Week
     template_name = 'cash/week-detail.html'
     context_object_name = 'week'
     slug_field = 'start_date'
