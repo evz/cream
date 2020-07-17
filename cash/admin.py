@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Week, Expense
+from .models import Week, Expense, FinancialInstitution
 
 @admin.register(Week)
 class WeekAdmin(admin.ModelAdmin):
@@ -60,3 +60,7 @@ class ExpenseAdmin(admin.ModelAdmin):
         else:
             return ''
     formatted_budgeted.short_description = 'Budgeted amount'
+
+@admin.register(FinancialInstitution)
+class FinancialInstitutionAdmin(admin.ModelAdmin):
+    list_display = ['name']
