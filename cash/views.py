@@ -1,11 +1,25 @@
+from datetime import datetime, timedelta
+
+from ofxtools.utils import UTC
+
 from django.shortcuts import render
 from django.views.generic import ListView
+from django.views.generic.base import TemplateView
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import ModelFormMixin, ProcessFormView, CreateView, UpdateView
 
-from .models import Week, Expense
+from .models import Week, Expense, Transaction
 from .forms import ExpenseForm
 
+
+class IndexView(TemplateView):
+    template_name = "cash/index.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        a_week_ago = (datetime.now() - timedelta(days=7)).replace(tzinfo=UTC)
+        context['transactions'] = Transaction.objects.filter(date_posted__gte=a_week_ago).order_by('-date_posted')
+        return context
 
 class CreateUpdateView(SingleObjectTemplateResponseMixin,
                        ModelFormMixin,
@@ -26,7 +40,7 @@ class CreateUpdateView(SingleObjectTemplateResponseMixin,
         return super().post(request, *args, **kwargs)
 
 
-class IndexView(ListView):
+class WeekListView(ListView):
     model = Week
     template_name = 'cash/week-list.html'
     context_object_name = 'weeks'

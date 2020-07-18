@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load formatting %}
+
+{% block title %}Cash Rules Everything Around Me{% endblock %}
+
+{% block content %}
+    <h1>
+        C.R.E.A.M.
+    </h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Amount</th>
+                <th>Date posted</th>
+                <th>Transaction type</th>
+                <th>Account</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions %}
+                    <tr>
+                        <td>
+                            {{ transaction.memo }}
+                        </td>
+                        <td>
+                            {{ transaction.amount|format_money }}
+                        </td>
+                        <td>
+                            {{ transaction.date_posted|date:"F d, Y" }}
+                        </td>
+                        <td>
+                            {{ transaction.transaction_type }}
+                        </td>
+                        <td>
+                            {{ transaction.account.bank.name }} - {{ transaction.account.account_type }}
+                        </td>
+                    </tr>
+                </form>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
