@@ -6,7 +6,7 @@ from ofxtools.Parser import OFXTree
 
 from cream.celery import app
 
-from .models import Transaction
+from .models import Transaction, FinancialInstitution
 
 
 class TransactionMachine(object):
@@ -14,44 +14,55 @@ class TransactionMachine(object):
         self.bank = bank
         self.parser = OFXTree()
 
-    def get_transactions(self):
+    def fetch_new_transactions(self):
+        results = []
+
         for account in self.bank.account_set.all():
-            try:
-                latest_transaction = Transaction.objects.filter(account=account).latest('date_posted')
-                from_date = latest_transaction.date_posted.replace(tzinfo=OFX_UTC)
-            except Transaction.DoesNotExist:
-                from_date = datetime(2016, 1, 1, tzinfo=OFX_UTC)
+            transactions = [self.make_transaction_object(t, account) for t in self.fetch_transactions_for_account(account)]
+            results.extend(Transaction.objects.bulk_create(transactions, ignore_conflicts=True))
 
-            to_date = datetime.now().replace(tzinfo=OFX_UTC)
+        return results
 
-            statement_request = StmtRq(acctid=account.account_number,
-                                       accttype=account.account_type,
-                                       dtstart=from_date,
-                                       dtend=to_date)
+    def fetch_transactions_for_account(self, account):
+        try:
+            latest_transaction = Transaction.objects.filter(account=account).latest('date_posted')
+            from_date = latest_transaction.date_posted.replace(tzinfo=OFX_UTC)
+        except Transaction.DoesNotExist:
+            from_date = datetime(2016, 1, 1, tzinfo=OFX_UTC)
 
-            response = self.bank.ofx_client.request_statements(self.bank.password,
-                                                               statement_request)
-            parsed_response = self.parser.parse(response)
+        to_date = datetime.now().replace(tzinfo=OFX_UTC)
 
-            transactions = []
+        statement_request = StmtRq(acctid=account.account_number,
+                                   accttype=account.account_type,
+                                   dtstart=from_date,
+                                   dtend=to_date)
 
-            for transaction in parsed_response.findall('.//STMTTRN'):
-                transaction_obj = Transaction()
-                transaction_obj.transaction_type = transaction.find('TRNTYPE').text
-                transaction_obj.transaction_id = transaction.find('FITID').text
-                transaction_obj.amount = transaction.find('TRNAMT').text
-                transaction_obj.name = transaction.find('NAME').text
-                transaction_obj.memo = transaction.find('MEMO').text
-                transaction_obj.date_posted = datetime.strptime(transaction.find('DTPOSTED').text[:8], '%Y%m%d').replace(tzinfo=OFX_UTC)
-                transaction_obj.account = account
-                transactions.append(transaction_obj)
+        response = self.bank.ofx_client.request_statements(self.bank.password,
+                                                           statement_request)
+        parsed_response = self.parser.parse(response)
 
-            Transaction.objects.bulk_create(transactions, ignore_conflicts=True)
+        yield from parsed_response.findall('.//STMTTRN')
+
+    def make_transaction_object(self, transaction_xml, account):
+        transaction = Transaction()
+        transaction.transaction_type = transaction_xml.find('TRNTYPE').text
+        transaction.transaction_id = transaction_xml.find('FITID').text
+        transaction.amount = transaction_xml.find('TRNAMT').text
+        transaction.name = transaction_xml.find('NAME').text
+        transaction.memo = transaction_xml.find('MEMO').text
+        transaction.date_posted = datetime.strptime(transaction_xml.find('DTPOSTED').text[:8], '%Y%m%d').replace(tzinfo=OFX_UTC)
+        transaction.account = account
+
+        return transaction
+
 
 @app.task
-def add(x,y):
-    return x + y
+def update_transactions():
+    banks = FinancialInstitution.objects.all()
 
-@app.task
-def schwab():
-    pass
+    update_results = []
+    for bank in banks:
+        machine = TransactionMachine(bank)
+        update_results.extend(machine.fetch_new_transactions())
+
+    return [t.transaction_id for t in update_results]
