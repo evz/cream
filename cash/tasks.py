@@ -70,7 +70,14 @@ def update_transactions():
 
 @app.task
 def backfill_payperiods():
-    pass
+    paychecks = Transaction.objects.filter(transaction_type='DIRECTDEP')
+                                   .filter(Q(memo__icontains="paypal") | Q(memo__icontains="mcgraw-hill"))
+                                   .exclude(Q(memo__icontains="edi") | Q(memo__icontains="paypal transfer"))
+                                   .order_by('date_posted')
+    for paycheck in paychecks:
+        payperiod = PayPeriod(income=paycheck.amount,
+                              start_date=paycheck.date_posted)
+        payperiod.save()
 
 
 @app.task

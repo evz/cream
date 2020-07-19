@@ -19,7 +19,7 @@ class PayPeriod(models.Model):
         return self.start_date.isoformat()
 
     @property
-    def previous_week(self):
+    def previous_payperiod(self):
         try:
             return self.get_previous_by_start_date()
         except PayPeriod.DoesNotExist:
@@ -30,8 +30,8 @@ class PayPeriod(models.Model):
         if self._carry_over:
             return self._carry_over
 
-        if self.previous_week:
-            return (self.previous_week.income - self.previous_week.total_expenses) + self.previous_week.carry_over
+        if self.previous_payperiod:
+            return (self.previous_payperiod.income - self.previous_payperiod.total_expenses) + self.previous_payperiod.carry_over
         else:
             return 0
 
@@ -39,7 +39,7 @@ class PayPeriod(models.Model):
     def total_expenses(self):
         expression = Sum(Coalesce('actual_amount', 'budgeted_amount'))
 
-        previous_expenses = Expense.objects.filter(week=self).aggregate(expenses=expression)
+        previous_expenses = Expense.objects.filter(payperiod=self).aggregate(expenses=expression)
 
         if previous_expenses['expenses']:
             return previous_expenses['expenses']
@@ -53,7 +53,7 @@ class PayPeriod(models.Model):
 
 class Expense(models.Model):
     budgeted_amount = models.FloatField()
-    week = models.ForeignKey(PayPeriod, on_delete=models.CASCADE)
+    payperiod = models.ForeignKey(PayPeriod, on_delete=models.CASCADE)
     description = models.CharField(max_length=1000)
     transaction = models.OneToOneField("Transaction",
                                        on_delete=models.SET_NULL,
@@ -62,11 +62,11 @@ class Expense(models.Model):
     def __str__(self):
         if self.transaction:
             return '{0} - {1} (${2})'.format(self.description,
-                                            self.week,
+                                            self.payperiod,
                                             self.transaction.amount)
         else:
             return '{0} - {1} (${2})'.format(self.description,
-                                            self.week,
+                                            self.payperiod,
                                             self.budgeted_amount)
 
     def save(self, **kwargs):

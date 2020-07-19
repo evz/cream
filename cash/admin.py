@@ -43,8 +43,8 @@ duplicate_expense.short_description = 'Duplicate selected expense'
 
 @admin.register(Expense)
 class ExpenseAdmin(admin.ModelAdmin):
-    list_display = ['week', 'description','formatted_budgeted', 'formatted_actual']
-    list_filter = ['week']
+    list_display = ['payperiod', 'description','formatted_budgeted', 'formatted_actual']
+    list_filter = ['payperiod']
     actions = [duplicate_expense]
 
     def formatted_actual(self, obj):
