@@ -5,7 +5,7 @@
 
 {% block content %}
     <h1>
-        C.R.E.A.M.
+        C.R.E.A.M. <small>Reconciliation dashboard</small>
     </h1>
 
     <table>
@@ -20,24 +20,23 @@
         </thead>
         <tbody>
             {% for transaction in transactions %}
-                    <tr>
-                        <td>
-                            {{ transaction.memo }}
-                        </td>
-                        <td>
-                            {{ transaction.amount|format_money }}
-                        </td>
-                        <td>
-                            {{ transaction.date_posted|date:"F d, Y" }}
-                        </td>
-                        <td>
-                            {{ transaction.transaction_type }}
-                        </td>
-                        <td>
-                            {{ transaction.account.bank.name }} - {{ transaction.account.account_type }}
-                        </td>
-                    </tr>
-                </form>
+                <tr>
+                    <td>
+                        {{ transaction.memo }}
+                    </td>
+                    <td>
+                        {{ transaction.amount|format_money }}
+                    </td>
+                    <td>
+                        {{ transaction.date_posted|date:"F d, Y" }}
+                    </td>
+                    <td>
+                        {{ transaction.transaction_type }}
+                    </td>
+                    <td>
+                        {{ transaction.account.bank.name }} - {{ transaction.account.account_type }}
+                    </td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>

@@ -66,3 +66,13 @@ def update_transactions():
         update_results.extend(machine.fetch_new_transactions())
 
     return [t.transaction_id for t in update_results]
+
+
+@app.task
+def backfill_payperiods():
+    pass
+
+
+@app.task
+def backfill_expenses():
+    pass

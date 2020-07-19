@@ -1,9 +1,9 @@
 from django.contrib import admin
 
-from .models import Week, Expense, FinancialInstitution
+from .models import PayPeriod, Expense, FinancialInstitution
 
-@admin.register(Week)
-class WeekAdmin(admin.ModelAdmin):
+@admin.register(PayPeriod)
+class PayPeriodAdmin(admin.ModelAdmin):
     list_display = [
         'start_date',
         'formatted_income',

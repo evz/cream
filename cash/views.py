@@ -8,7 +8,7 @@ from django.views.generic.base import TemplateView
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import ModelFormMixin, ProcessFormView, CreateView, UpdateView
 
-from .models import Week, Expense, Transaction
+from .models import PayPeriod, Expense, Transaction
 from .forms import ExpenseForm
 
 
@@ -40,17 +40,17 @@ class CreateUpdateView(SingleObjectTemplateResponseMixin,
         return super().post(request, *args, **kwargs)
 
 
-class WeekListView(ListView):
-    model = Week
-    template_name = 'cash/week-list.html'
-    context_object_name = 'weeks'
+class PayPeriodListView(ListView):
+    model = PayPeriod
+    template_name = 'cash/payperiod-list.html'
+    context_object_name = 'payperiods'
     ordering = '-start_date'
 
 
-class WeekDetail(CreateUpdateView):
-    model = Week
-    template_name = 'cash/week-detail.html'
-    context_object_name = 'week'
+class PayPeriodDetail(CreateUpdateView):
+    model = PayPeriod
+    template_name = 'cash/payperiod-detail.html'
+    context_object_name = 'payperiod'
     slug_field = 'start_date'
 
 
@@ -59,7 +59,7 @@ class CreateExpense(CreateView):
     model = Expense
 
     def get_success_url(self):
-        return reverse('week-detail', kwargs={'slug': self.object.week.slug})
+        return reverse('payperiod-detail', kwargs={'slug': self.object.payperiod.slug})
 
 
 class UpdateExpense(UpdateView):
@@ -68,4 +68,4 @@ class UpdateExpense(UpdateView):
     form_class = ExpenseForm
 
     def get_success_url(self):
-        return reverse('week-detail', kwargs={'slug': self.object.week.slug})
+        return reverse('payperiod-detail', kwargs={'slug': self.object.payperiod.slug})

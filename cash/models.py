@@ -9,7 +9,7 @@ from ofxtools.utils import UTC as OFX_UTC
 from ofxtools.Client import OFXClient, StmtRq
 from ofxtools.Parser import OFXTree
 
-class Week(models.Model):
+class PayPeriod(models.Model):
     income = models.FloatField(unique_for_date='start_date')
     start_date = models.DateField()
     slug = models.SlugField(null=True)
@@ -22,7 +22,7 @@ class Week(models.Model):
     def previous_week(self):
         try:
             return self.get_previous_by_start_date()
-        except Week.DoesNotExist:
+        except PayPeriod.DoesNotExist:
             return None
 
     @property
@@ -53,21 +53,24 @@ class Week(models.Model):
 
 class Expense(models.Model):
     budgeted_amount = models.FloatField()
-    week = models.ForeignKey(Week, on_delete=models.CASCADE)
+    week = models.ForeignKey(PayPeriod, on_delete=models.CASCADE)
     description = models.CharField(max_length=1000)
     transaction = models.OneToOneField("Transaction",
                                        on_delete=models.SET_NULL,
                                        null=True)
 
     def __str__(self):
-        if self.actual_amount:
+        if self.transaction:
             return '{0} - {1} (${2})'.format(self.description,
                                             self.week,
-                                            self.actual_amount)
+                                            self.transaction.amount)
         else:
             return '{0} - {1} (${2})'.format(self.description,
                                             self.week,
                                             self.budgeted_amount)
+
+    def save(self, **kwargs):
+        return super().save(**kwargs)
 
 TRANSACTION_TYPES = [
     ("CREDIT", "credit"),
