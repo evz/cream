@@ -1,12 +1,14 @@
 from datetime import datetime
 
+from django.db.models import Q
+
 from ofxtools.utils import UTC as OFX_UTC
 from ofxtools.Client import OFXClient, StmtRq
 from ofxtools.Parser import OFXTree
 
 from cream.celery import app
 
-from .models import Transaction, FinancialInstitution
+from .models import Transaction, FinancialInstitution, PayPeriod, Expense
 
 
 class TransactionMachine(object):
@@ -70,16 +72,32 @@ def update_transactions():
 
 @app.task
 def backfill_payperiods():
-    paychecks = Transaction.objects.filter(transaction_type='DIRECTDEP')
-                                   .filter(Q(memo__icontains="paypal") | Q(memo__icontains="mcgraw-hill"))
-                                   .exclude(Q(memo__icontains="edi") | Q(memo__icontains="paypal transfer"))
+    paychecks = Transaction.objects.filter(transaction_type='DIRECTDEP')\
+                                   .filter(Q(memo__icontains="paypal") | Q(memo__icontains="mcgraw-hill"))\
+                                   .exclude(Q(memo__icontains="edi") | Q(memo__icontains="paypal transfer"))\
                                    .order_by('date_posted')
+    payperiods = []
     for paycheck in paychecks:
         payperiod = PayPeriod(income=paycheck.amount,
-                              start_date=paycheck.date_posted)
+                              start_date=paycheck.date_posted,
+                              transaction=paycheck)
         payperiod.save()
 
 
 @app.task
 def backfill_expenses():
-    pass
+    atm = Q(transaction_type='ATM')
+    check = Q(transaction_type='CHECK')
+    debit = Q(transaction_type='DEBIT')
+    pos = Q(transaction_type='POS')
+
+    expenses = []
+    for transaction in Transaction.objects.filter(atm | check | debit | pos).filter(date_posted__gte='2020-01-03'):
+        payperiod = PayPeriod.objects.filter(start_date__lte=transaction.date_posted).latest('start_date')
+        expense = Expense(budgeted_amount=abs(transaction.amount),
+                          payperiod=payperiod,
+                          description=transaction.memo,
+                          transaction=transaction)
+        expenses.append(expense)
+
+    Expense.objects.bulk_create(expenses, ignore_conflicts=True)

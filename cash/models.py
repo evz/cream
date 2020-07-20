@@ -9,14 +9,17 @@ from ofxtools.utils import UTC as OFX_UTC
 from ofxtools.Client import OFXClient, StmtRq
 from ofxtools.Parser import OFXTree
 
+
 class PayPeriod(models.Model):
-    income = models.FloatField(unique_for_date='start_date')
+    income = models.FloatField()
+    budgeted_income = models.FloatField()
     start_date = models.DateField()
+    transactions = models.ManyToManyField("Transaction", null=True)
     slug = models.SlugField(null=True)
     _carry_over = models.FloatField(null=True, blank=True)
 
     def __str__(self):
-        return self.start_date.isoformat()
+        return self.start_date.isoformat()[:10]
 
     @property
     def previous_payperiod(self):
@@ -31,13 +34,13 @@ class PayPeriod(models.Model):
             return self._carry_over
 
         if self.previous_payperiod:
-            return (self.previous_payperiod.income - self.previous_payperiod.total_expenses) + self.previous_payperiod.carry_over
+            return (self.previous_payperiod.income - abs(self.previous_payperiod.total_expenses)) + self.previous_payperiod.carry_over
         else:
             return 0
 
     @property
     def total_expenses(self):
-        expression = Sum(Coalesce('actual_amount', 'budgeted_amount'))
+        expression = Sum(Coalesce('transaction__amount', 'budgeted_amount'))
 
         previous_expenses = Expense.objects.filter(payperiod=self).aggregate(expenses=expression)
 
@@ -47,30 +50,30 @@ class PayPeriod(models.Model):
         return 0
 
     def save(self, **kwargs):
-        self.slug = slugify(self.start_date)
+        self.slug = str(self)
         return super().save(**kwargs)
 
 
 class Expense(models.Model):
     budgeted_amount = models.FloatField()
-    payperiod = models.ForeignKey(PayPeriod, on_delete=models.CASCADE)
+    payperiod = models.ForeignKey(PayPeriod,
+                                  on_delete=models.SET_NULL,
+                                  null=True)
     description = models.CharField(max_length=1000)
-    transaction = models.OneToOneField("Transaction",
-                                       on_delete=models.SET_NULL,
-                                       null=True)
+    transaction = models.ForeignKey("Transaction",
+                                    on_delete=models.SET_NULL,
+                                    null=True)
 
     def __str__(self):
         if self.transaction:
             return '{0} - {1} (${2})'.format(self.description,
-                                            self.payperiod,
-                                            self.transaction.amount)
+                                             self.payperiod,
+                                             self.transaction.amount)
         else:
             return '{0} - {1} (${2})'.format(self.description,
-                                            self.payperiod,
-                                            self.budgeted_amount)
+                                             self.payperiod,
+                                             self.budgeted_amount)
 
-    def save(self, **kwargs):
-        return super().save(**kwargs)
 
 TRANSACTION_TYPES = [
     ("CREDIT", "credit"),

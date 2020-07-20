@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from ofxtools.utils import UTC
 
 from django.shortcuts import render
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import ModelFormMixin, ProcessFormView, CreateView, UpdateView
@@ -17,8 +17,7 @@ class IndexView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        a_week_ago = (datetime.now() - timedelta(days=7)).replace(tzinfo=UTC)
-        context['transactions'] = Transaction.objects.filter(date_posted__gte=a_week_ago).order_by('-date_posted')
+        context['payperiods'] = PayPeriod.objects.order_by('start_date')
         return context
 
 class CreateUpdateView(SingleObjectTemplateResponseMixin,
@@ -47,7 +46,7 @@ class PayPeriodListView(ListView):
     ordering = '-start_date'
 
 
-class PayPeriodDetail(CreateUpdateView):
+class PayPeriodDetail(DetailView):
     model = PayPeriod
     template_name = 'cash/payperiod-detail.html'
     context_object_name = 'payperiod'

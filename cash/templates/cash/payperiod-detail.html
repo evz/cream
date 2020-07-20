@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 {% load formatting %}
 
-{% block title %}Week of {{ week.start_date|date:"F j, Y" }}{% endblock %}
+{% block title %}payperiod of {{ payperiod.start_date|date:"F j, Y" }}{% endblock %}
 
 {% block content %}
     <h1>
-        Week of {{ week.start_date|date:"F j, Y" }}<br />
-        <span class="label warning">Income: <strong>{{ week.income|format_money }}</strong></span>
-        <span class="label warning">Carry over: <strong>{{ week.carry_over|format_money }}</strong></span>
-        <span class="label warning">Total expenses: <strong>{{ week.total_expenses|format_money }}</strong></span>
+        Pay period start date: {{ payperiod.start_date|date:"F j, Y" }}<br />
+        <span class="label warning">Income: <strong>{{ payperiod.income|format_money }}</strong></span>
+        <span class="label warning">Carry over: <strong>{{ payperiod.carry_over|format_money }}</strong></span>
+        <span class="label warning">Total expenses: <strong>{{ payperiod.total_expenses|format_money }}</strong></span>
     </h1>
 
     <table>
@@ -21,7 +21,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for expense in week.expense_set.all %}
+            {% for expense in payperiod.expense_set.all %}
                 <form method="POST" action="{% url 'update-expense' expense.id %}">
                     {% csrf_token %}
                     <input type="hidden" name="description" value="{{ expense.description }}" />
