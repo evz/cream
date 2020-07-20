@@ -1,3 +1,4 @@
+import itertools
 from datetime import datetime
 
 from django.db.models import Q
@@ -77,11 +78,14 @@ def backfill_payperiods():
                                    .exclude(Q(memo__icontains="edi") | Q(memo__icontains="paypal transfer"))\
                                    .order_by('date_posted')
     payperiods = []
-    for paycheck in paychecks:
-        payperiod = PayPeriod(income=paycheck.amount,
-                              start_date=paycheck.date_posted,
-                              transaction=paycheck)
+    for date_posted, paychecks in itertools.groupby(paychecks, key=lambda x: x.date_posted):
+        paychecks = list(paychecks)
+        income = sum(p.amount for p in paychecks)
+        payperiod = PayPeriod(income=income,
+                              budgeted_income=0,
+                              start_date=date_posted)
         payperiod.save()
+        payperiod.transactions.set(paychecks, clear=True)
 
 
 @app.task
