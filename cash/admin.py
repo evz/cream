@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import PayPeriod, Expense, FinancialInstitution
+from .models import PayPeriod, Expense, FinancialInstitution, Account
 
 @admin.register(PayPeriod)
 class PayPeriodAdmin(admin.ModelAdmin):
@@ -48,8 +48,8 @@ class ExpenseAdmin(admin.ModelAdmin):
     actions = [duplicate_expense]
 
     def formatted_actual(self, obj):
-        if obj.actual_amount:
-            return '${:03.2f}'.format(obj.actual_amount)
+        if obj.transaction:
+            return '${:03.2f}'.format(obj.transaction.amount)
         else:
             return ''
     formatted_actual.short_description = 'Actual amount spent'
@@ -64,3 +64,10 @@ class ExpenseAdmin(admin.ModelAdmin):
 @admin.register(FinancialInstitution)
 class FinancialInstitutionAdmin(admin.ModelAdmin):
     list_display = ['name']
+
+@admin.register(Account)
+class AccountAdmin(admin.ModelAdmin):
+    list_display = ['formatted_name']
+
+    def formatted_name(self, obj):
+        return '{} - {}'.format(obj.bank.name, obj.account_type)

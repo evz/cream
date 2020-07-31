@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load formatting %}
+
+{% block title %}Cash Rules Everything Around Me{% endblock %}
+
+{% block content %}
+    <h1>
+        Do these look like transfers?
+    </h1>
+    
+    <p>In order for things to add up properly, we need to know when we're transferring money between accounts. Doing this automatically is kinda problematic so click "save" next to the ones that actually represent money moving from one account we own to another account we own.</p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Amount</th>
+          <th>Date transferred out</th>
+          <th>Date transferred in</th>
+          <th>Outgoing description</th>
+          <th>Incoming description</th>
+          <th>Account transferred from</th>
+          <th>Account transferred to</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for transfer in proposed_transfers %}
+          <tr>
+            <td>{{ transfer.to_amount|format_money }}</td> 
+            <td>{{ transfer.from_date_posted|date:"F j, Y" }}</td> 
+            <td>{{ transfer.to_date_posted|date:"F j, Y" }}</td> 
+            <td>{{ transfer.from_memo }}</td> 
+            <td>{{ transfer.to_memo }}</td> 
+            <td>{{ transfer.from_bank_name }} - {{ transfer.from_account_number }}</td> 
+            <td>{{ transfer.to_bank_name }} - {{ transfer.to_account_number }}</td> 
+            <td>
+              <button class="button small">Save</button>
+            </td> 
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+{% endblock %}

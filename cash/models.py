@@ -14,7 +14,7 @@ class PayPeriod(models.Model):
     income = models.FloatField()
     budgeted_income = models.FloatField()
     start_date = models.DateField()
-    transactions = models.ManyToManyField("Transaction", null=True)
+    transactions = models.ManyToManyField("Transaction")
     slug = models.SlugField(null=True)
     _carry_over = models.FloatField(null=True, blank=True)
 
@@ -113,14 +113,14 @@ class Transaction(models.Model):
 
 class FinancialInstitution(models.Model):
     name = models.CharField(max_length=255)
-    ofx_endpoint = models.URLField(max_length=500)
-    user_id = models.CharField(max_length=100)
+    ofx_endpoint = models.URLField(max_length=500, null=True, blank=True)
+    user_id = models.CharField(max_length=100, null=True, blank=True)
     # I really hope banks start actually using OAuth soon ...
-    password = models.CharField(max_length=100)
-    bank_id = models.CharField(max_length=100)
-    org = models.CharField(max_length=10, default="ISC")
-    fid = models.CharField(max_length=10)
-    version = models.IntegerField(default=220)
+    password = models.CharField(max_length=100, null=True, blank=True)
+    bank_id = models.CharField(max_length=100, null=True, blank=True)
+    org = models.CharField(max_length=10, null=True, blank=True)
+    fid = models.CharField(max_length=10, null=True, blank=True)
+    version = models.IntegerField(default=220, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -137,24 +137,43 @@ class FinancialInstitution(models.Model):
     def save(self, **kwargs):
         saved = super().save(**kwargs)
 
-        yesterday = (datetime.now() - timedelta(days=1)).replace(tzinfo=OFX_UTC)
-        response = self.ofx_client.request_accounts(self.password, yesterday)
-        parser = OFXTree()
-        parsed_response = parser.parse(response)
+        if self.ofx_endpoint:
 
-        for account in parsed_response.findall('.//ACCTINFO'):
-            account_type = account.find('.//ACCTTYPE').text
-            account_number = account.find('.//ACCTID').text
-            account_obj, created = Account.objects.get_or_create(account_type=account_type,
-                                                                 account_number=account_number,
-                                                                 bank=self)
+            yesterday = (datetime.now() - timedelta(days=1)).replace(tzinfo=OFX_UTC)
+            response = self.ofx_client.request_accounts(self.password, yesterday)
+            parser = OFXTree()
+            parsed_response = parser.parse(response)
+
+            for account in parsed_response.findall('.//ACCTINFO'):
+                account_type = account.find('.//ACCTTYPE').text
+                account_number = account.find('.//ACCTID').text
+                account_obj, created = Account.objects.get_or_create(account_type=account_type,
+                                                                     account_number=account_number,
+                                                                     bank=self)
 
         return saved
+
 
 class Account(models.Model):
     account_type = models.CharField(max_length=255)
     account_number = models.CharField(max_length=100)
     bank = models.ForeignKey("FinancialInstitution", on_delete=models.CASCADE)
+    upload_parser = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return '{} - {}'.format(self.account_type, self.bank.name)
+
+
+class Transfer(models.Model):
+    transaction_from = models.OneToOneField(Transaction,
+                                            on_delete=models.CASCADE,
+                                            related_name='transfer_from')
+    transaction_to = models.OneToOneField(Transaction,
+                                          on_delete=models.CASCADE,
+                                          related_name='transfer_to')
+    reason = models.CharField(max_length=1000, null=True)
+
+    def __str__(self):
+        return '${} From: {} To: {}'.format(self.transaction_to.amount,
+                                            self.transaction_from.account,
+                                            self.transaction_to.account)

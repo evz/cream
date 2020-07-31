@@ -5,37 +5,41 @@
 
 {% block content %}
     <h1>
-        C.R.E.A.M. <small>Expense overview</small>
+        C.R.E.A.M.
     </h1>
+    
+    <form action="{% url 'index' %}" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <fieldset class="fieldset">
+            <legend>Upload new transactions</legend>
+            <div class="grid-container">
+                <div class="grid-x grid-padding-x">
+                    <div class="input-group">
+                        <span class="input-group-label">Account</span>
+                        <select class="input-group-field" name="account-name">
+                            {% for account in accounts %}
+                            <option value="{{ account.id }}">{{ account.bank.name }} - {{ account.account_type }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="input-group-button">
+                            <label for="csv-upload" class="button">Upload File
+                                <input type="file" id="csv-upload" name="csv" class="show-for-sr">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid-x grid-padding-x">
+                    <input type="submit" class="button expanded" value="Submit">
+                </div>
+                {% if messages %}
+                    {% for message in messages %}
+                        <p><strong>{{ message }}</strong></p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </fieldset>
+		</form>
+    
+    <h3>Dashboard <small>Coming soon!</small></h3>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Pay day</th>
-                <th>Amount</th>
-                <th>Total expenses</th>
-                <th>Amount carried over</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for payperiod in payperiods %}
-                <tr>
-                    <td>
-                        <a href="{% url 'payperiod-detail' payperiod.slug %}">
-                            {{ payperiod.start_date|date:"F d, Y" }}
-                        </a>
-                    </td>
-                    <td>
-                        {{ payperiod.income|format_money }}
-                    </td>
-                    <td>
-                      {{ payperiod.total_expenses|format_money }}
-                    </td>
-                    <td>
-                        {{ payperiod.carry_over|format_money }}
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 {% endblock %}

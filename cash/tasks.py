@@ -1,3 +1,5 @@
+import csv
+import hashlib
 import itertools
 from datetime import datetime
 
@@ -9,7 +11,7 @@ from ofxtools.Parser import OFXTree
 
 from cream.celery import app
 
-from .models import Transaction, FinancialInstitution, PayPeriod, Expense
+from .models import Transaction, FinancialInstitution, PayPeriod, Expense, Account
 
 
 class TransactionMachine(object):
@@ -61,7 +63,8 @@ class TransactionMachine(object):
 
 @app.task
 def update_transactions():
-    banks = FinancialInstitution.objects.all()
+    # Only load Schwab for the moment
+    banks = FinancialInstitution.objects.filter(id=4)
 
     update_results = []
     for bank in banks:
@@ -105,3 +108,90 @@ def backfill_expenses():
         expenses.append(expense)
 
     Expense.objects.bulk_create(expenses, ignore_conflicts=True)
+
+
+@app.task
+def process_file(account_id, filepath):
+    account = Account.objects.get(id=account_id)
+
+    if account.upload_parser:
+        eval(account.upload_parser).delay(account_id, filepath)
+    else:
+        raise Exception('No upload parser defined for {}'.format(account))
+
+
+@app.task
+def chase_parser(account_id, filepath):
+
+    with open(filepath) as f:
+        reader = csv.DictReader(f)
+
+        transactions = []
+        account = Account.objects.get(id=account_id)
+
+        for row in reader:
+            id_string = ''.join(v for v in list(row.values())[:-1])
+            hasher = hashlib.md5()
+            hasher.update(id_string.encode('utf-8'))
+            transaction_id = hasher.hexdigest()
+            name = row['Description']
+            memo = row['Description']
+            amount = row['Amount']
+            date_posted = datetime.strptime(row['Posting Date'], '%m/%d/%Y').replace(tzinfo=OFX_UTC)
+            check_number = None
+
+            if row['Check or Slip #']:
+                check_number = row['Check or Slip #']
+
+            transaction_type = row['Details']
+
+            if 'INTEREST PAYMENT' in name:
+                transaction_type = 'INT'
+            elif 'ACCT_XFER' in row['Type']:
+                transaction_type = 'XFER'
+
+            transaction = Transaction(transaction_id=transaction_id,
+                                      name=name,
+                                      memo=memo,
+                                      amount=amount,
+                                      date_posted=date_posted,
+                                      check_number=check_number,
+                                      transaction_type=transaction_type,
+                                      account=account)
+            transactions.append(transaction)
+
+        Transaction.objects.bulk_create(transactions, ignore_conflicts=True)
+
+
+@app.task
+def citizens_bank_parser(account_id, filepath):
+    with open(filepath) as f:
+        reader = csv.DictReader(f)
+
+        transactions = []
+        account = Account.objects.get(id=account_id)
+
+        for row in reader:
+            id_string = ''.join(v for v in list(row.values())[:-1])
+            hasher = hashlib.md5()
+            hasher.update(id_string.encode('utf-8'))
+            transaction_id = hasher.hexdigest()
+            name = row['Description']
+            memo = row['Description']
+            amount = row['Amount']
+            date_posted = datetime.strptime(row['Date'], '%m/%d/%Y').replace(tzinfo=OFX_UTC)
+            transaction_type = 'CREDIT'
+
+            if float(amount) < 0:
+                transaction_type = 'DEBIT'
+
+            transaction = Transaction(transaction_id=transaction_id,
+                                      name=name,
+                                      memo=memo,
+                                      amount=amount,
+                                      date_posted=date_posted,
+                                      transaction_type=transaction_type,
+                                      account=account)
+            transactions.append(transaction)
+
+        Transaction.objects.bulk_create(transactions, ignore_conflicts=True)
