@@ -13,7 +13,7 @@ from django.views.generic.base import TemplateView
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import ModelFormMixin, ProcessFormView, CreateView, UpdateView
 
-from .models import PayPeriod, Expense, Transaction, Account
+from .models import PayPeriod, Expense, Transaction, Account, Transfer
 from .forms import ExpenseForm
 from .tasks import process_file
 
@@ -110,7 +110,13 @@ class ReconcileTransfers(TemplateView):
               ON from_account.bank_id = from_bank.id
             JOIN cash_financialinstitution AS to_bank
               ON to_account.bank_id = to_bank.id
-            WHERE from_account.id != to_account.id;
+            LEFT JOIN cash_transfer AS transfer
+              ON from_trans.transaction_id = transfer.transaction_from_id
+              AND to_trans.transaction_id = transfer.transaction_to_id
+            WHERE from_account.id != to_account.id
+              AND transfer.transaction_from_id IS NULL
+              AND transfer.transaction_to_id IS NULL
+            ORDER BY to_trans.date_posted DESC;
         '''
 
         with connection.cursor() as cursor:
@@ -126,3 +132,12 @@ class ReconcileTransfers(TemplateView):
             dict(zip(columns, row))
             for row in cursor.fetchall()
         ]
+
+    def post(self, request, *args, **kwargs):
+        transaction_from_id = request.POST['from_trans']
+        transaction_to_id = request.POST['to_trans']
+        reason = request.POST['reason']
+        transfer = Transfer.objects.create(transaction_from_id=transaction_from_id,
+                                           transaction_to_id=transaction_to_id,
+                                           reason=reason)
+        return self.render_to_response(self.get_context_data(**kwargs))

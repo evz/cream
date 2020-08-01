@@ -10,5 +10,5 @@ urlpatterns = [
     path('expense/create/', CreateExpense.as_view(), name='create-expense'),
     path('expense/update/<int:pk>/', UpdateExpense.as_view(), name='update-expense'),
     path('', IndexView.as_view(), name='index'),
-    path('/incoming-transfers/', ReconcileTransfers.as_view(), name='incoming-transfers'),
+    path('incoming-transfers/', ReconcileTransfers.as_view(), name='incoming-transfers'),
 ]

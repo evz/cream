@@ -14,12 +14,9 @@
       <thead>
         <tr>
           <th>Amount</th>
-          <th>Date transferred out</th>
-          <th>Date transferred in</th>
-          <th>Outgoing description</th>
-          <th>Incoming description</th>
-          <th>Account transferred from</th>
-          <th>Account transferred to</th>
+          <th>Date</th>
+          <th>Descriptions (outgoing / incoming)</th>
+          <th>Accounts (from / to)</th>
           <th></th>
         </tr>
       </thead>
@@ -28,13 +25,26 @@
           <tr>
             <td>{{ transfer.to_amount|format_money }}</td> 
             <td>{{ transfer.from_date_posted|date:"F j, Y" }}</td> 
-            <td>{{ transfer.to_date_posted|date:"F j, Y" }}</td> 
-            <td>{{ transfer.from_memo }}</td> 
-            <td>{{ transfer.to_memo }}</td> 
-            <td>{{ transfer.from_bank_name }} - {{ transfer.from_account_number }}</td> 
-            <td>{{ transfer.to_bank_name }} - {{ transfer.to_account_number }}</td> 
             <td>
-              <button class="button small">Save</button>
+              {{ transfer.from_memo }} /<br /> 
+              {{ transfer.to_memo }}
+            </td> 
+            <td>
+              {{ transfer.from_bank_name }} - {{ transfer.from_account_number }} /<br />
+              {{ transfer.to_bank_name }} - {{ transfer.to_account_number }}
+            </td> 
+            <td>
+              <form method="POST" action="{% url 'incoming-transfers' %}">
+                {% csrf_token %}
+                <input type="hidden" name="from_trans" value="{{ transfer.from_transaction_id }}" />
+                <input type="hidden" name="to_trans" value="{{ transfer.to_transaction_id }}" />
+								<div class="input-group">
+									<input class="input-group-field" type="text" name="reason" placeholder="Reason?">
+									<div class="input-group-button">
+										<input type="submit" class="button" value="Save">
+									</div>
+								</div>
+              </form>
             </td> 
           </tr>
         {% endfor %}

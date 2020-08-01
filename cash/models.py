@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from django.db import models
+from django.db import models, connection
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
 from django.utils.text import slugify
@@ -40,12 +40,27 @@ class PayPeriod(models.Model):
 
     @property
     def total_expenses(self):
-        expression = Sum(Coalesce('transaction__amount', 'budgeted_amount'))
+        query = '''
+        SELECT
+          SUM(COALESCE(transaction.amount, expense.budgeted_amount)) AS amount
+        FROM cash_expense AS expense
+        JOIN cash_transaction AS transaction
+          USING(transaction_id)
+        JOIN cash_payperiod AS payperiod
+          ON expense.payperiod_id = payperiod.id
+        LEFT JOIN cash_transfer AS transfer
+          ON transaction.transaction_id = transfer.transaction_from_id
+          OR transaction.transaction_id = transfer.transaction_to_id
+        WHERE payperiod.id = %s
+          AND (transfer.transaction_from_id IS NULL OR transfer.transaction_to_id IS NULL);
+        '''
 
-        previous_expenses = Expense.objects.filter(payperiod=self).aggregate(expenses=expression)
+        with connection.cursor() as cursor:
+            cursor.execute(query, [self.id])
+            previous_expenses = cursor.fetchone()[0]
 
-        if previous_expenses['expenses']:
-            return previous_expenses['expenses']
+        if previous_expenses:
+            return previous_expenses
 
         return 0
 
