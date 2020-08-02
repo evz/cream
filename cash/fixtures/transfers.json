@@ -1,0 +1,20 @@
+[
+    {
+        "model": "cash.transfer",
+        "pk": 1,
+        "fields": {
+            "transaction_from": "transfer from checking to savings",
+            "transaction_to": "transfer to savings from checking",
+            "reason": "$$$$$"
+        }
+    },
+    {
+        "model": "cash.transfer",
+        "pk": 2,
+        "fields": {
+            "transaction_from": "savings to checking",
+            "transaction_to": "checking from savings",
+            "reason": "$$$$$"
+        }
+    }
+]

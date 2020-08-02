@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
 from django.db import models, connection
-from django.db.models import Sum
-from django.db.models.functions import Coalesce
+from django.db.models import Sum, Q
+from django.db.models.functions import Coalesce, Abs
 from django.utils.text import slugify
 
 from ofxtools.utils import UTC as OFX_UTC
@@ -11,15 +11,27 @@ from ofxtools.Parser import OFXTree
 
 
 class PayPeriod(models.Model):
-    income = models.FloatField()
     budgeted_income = models.FloatField()
     start_date = models.DateField()
-    transactions = models.ManyToManyField("Transaction")
+    paychecks = models.ManyToManyField("Transaction")
     slug = models.SlugField(null=True)
     _carry_over = models.FloatField(null=True, blank=True)
 
     def __str__(self):
-        return self.start_date.isoformat()[:10]
+        try:
+            return self.start_date.isoformat()[:10]
+        except AttributeError:
+            return self.start_date
+
+    @property
+    def income(self):
+
+        income = Transaction.objects.filter(payperiod=self).aggregate(Sum('amount'))
+
+        if income['amount__sum']:
+            return income['amount__sum']
+        else:
+            return self.budgeted_income
 
     @property
     def previous_payperiod(self):
@@ -40,27 +52,14 @@ class PayPeriod(models.Model):
 
     @property
     def total_expenses(self):
-        query = '''
-        SELECT
-          SUM(COALESCE(transaction.amount, expense.budgeted_amount)) AS amount
-        FROM cash_expense AS expense
-        JOIN cash_transaction AS transaction
-          USING(transaction_id)
-        JOIN cash_payperiod AS payperiod
-          ON expense.payperiod_id = payperiod.id
-        LEFT JOIN cash_transfer AS transfer
-          ON transaction.transaction_id = transfer.transaction_from_id
-          OR transaction.transaction_id = transfer.transaction_to_id
-        WHERE payperiod.id = %s
-          AND (transfer.transaction_from_id IS NULL OR transfer.transaction_to_id IS NULL);
-        '''
 
-        with connection.cursor() as cursor:
-            cursor.execute(query, [self.id])
-            previous_expenses = cursor.fetchone()[0]
+        expression = Sum(Coalesce(Abs('transaction__amount'), 'budgeted_amount'))
 
-        if previous_expenses:
-            return previous_expenses
+        total_expenses = Expense.objects.filter(payperiod=self)\
+                                        .aggregate(total_expenses=expression)
+
+        if total_expenses:
+            return total_expenses['total_expenses']
 
         return 0
 

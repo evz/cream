@@ -1,0 +1,353 @@
+[
+    {
+        "model": "cash.transaction",
+        "pk": "2020-01-01-paycheck1",
+        "fields": {
+            "name": "January 1 paycheck",
+            "memo": "January 1 paycheck",
+            "amount": 1003,
+            "date_posted": "2020-01-01T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "CREDIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "2020-01-15-paycheck1",
+        "fields": {
+            "name": "January 15 paycheck",
+            "memo": "January 15 paycheck",
+            "amount": 1999,
+            "date_posted": "2020-01-15T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "CREDIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "50 - 1 - fifty dollar expense",
+        "fields": {
+            "name": "fifty dollar transaction",
+            "memo": "fifty dollar transaction",
+            "amount": -50.0,
+            "date_posted": "2020-01-02T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "48 - 1 - fifty dollar expense",
+        "fields": {
+            "name": "fifty dollar transaction",
+            "memo": "fifty dollar transaction",
+            "amount": -48.0,
+            "date_posted": "2020-01-02T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "53 - 1 - fifty dollar expense",
+        "fields": {
+            "name": "fifty dollar transaction",
+            "memo": "fifty dollar transaction",
+            "amount": -53.0,
+            "date_posted": "2020-01-02T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "47 - 1 - fifty dollar expense",
+        "fields": {
+            "name": "fifty dollar transaction",
+            "memo": "fifty dollar transaction",
+            "amount": -47.0,
+            "date_posted": "2020-01-02T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "55 - 1 - fifty dollar expense",
+        "fields": {
+            "name": "fifty dollar transaction",
+            "memo": "fifty dollar transaction",
+            "amount": -55.0,
+            "date_posted": "2020-01-02T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "49 - 1 - fifty dollar expense",
+        "fields": {
+            "name": "fifty dollar transaction",
+            "memo": "fifty dollar transaction",
+            "amount": -49.0,
+            "date_posted": "2020-01-02T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "47 - 2 - fifty dollar expense",
+        "fields": {
+            "name": "fifty dollar transaction",
+            "memo": "fifty dollar transaction",
+            "amount": -47.0,
+            "date_posted": "2020-01-17T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "55 - 2 - fifty dollar expense",
+        "fields": {
+            "name": "fifty dollar transaction",
+            "memo": "fifty dollar transaction",
+            "amount": -55.0,
+            "date_posted": "2020-01-17T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "49 - 2 - fifty dollar expense",
+        "fields": {
+            "name": "fifty dollar transaction",
+            "memo": "fifty dollar transaction",
+            "amount": -49.0,
+            "date_posted": "2020-01-17T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "100 - 1 - hundred dollar expense",
+        "fields": {
+            "name": "hundred dollar transaction",
+            "memo": "hundred dollar transaction",
+            "amount": -100.0,
+            "date_posted": "2020-01-03T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "103 - 1 - hundred dollar expense",
+        "fields": {
+            "name": "hundred dollar transaction",
+            "memo": "hundred dollar transaction",
+            "amount": -103.0,
+            "date_posted": "2020-01-03T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "98 - 1 - hundred dollar expense",
+        "fields": {
+            "name": "hundred dollar transaction",
+            "memo": "hundred dollar transaction",
+            "amount": -98.0,
+            "date_posted": "2020-01-03T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "95 - 1 - hundred dollar expense",
+        "fields": {
+            "name": "hundred dollar transaction",
+            "memo": "hundred dollar transaction",
+            "amount": -95.0,
+            "date_posted": "2020-01-03T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "102 - 1 - hundred dollar expense",
+        "fields": {
+            "name": "hundred dollar transaction",
+            "memo": "hundred dollar transaction",
+            "amount": -102.0,
+            "date_posted": "2020-01-03T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "95 - 2 - hundred dollar expense",
+        "fields": {
+            "name": "hundred dollar transaction",
+            "memo": "hundred dollar transaction",
+            "amount": -95.0,
+            "date_posted": "2020-01-18T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "102 - 2 - hundred dollar expense",
+        "fields": {
+            "name": "hundred dollar transaction",
+            "memo": "hundred dollar transaction",
+            "amount": -102.0,
+            "date_posted": "2020-01-18T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "251 - 1 - two hundred fifty dollar expense",
+        "fields": {
+            "name": "two hundred fifty dollar transaction",
+            "memo": "two hundred fifty dollar transaction",
+            "amount": -251.0,
+            "date_posted": "2020-01-04T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "252 - 1 - two hundred fifty dollar expense",
+        "fields": {
+            "name": "two hundred fifty dollar transaction",
+            "memo": "two hundred fifty dollar transaction",
+            "amount": -252.0,
+            "date_posted": "2020-01-04T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "247 - 1 - two hundred fifty dollar expense",
+        "fields": {
+            "name": "two hundred fifty dollar transaction",
+            "memo": "two hundred fifty dollar transaction",
+            "amount": -247.0,
+            "date_posted": "2020-01-04T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "244 - 1 - two hundred fifty dollar expense",
+        "fields": {
+            "name": "two hundred fifty dollar transaction",
+            "memo": "two hundred fifty dollar transaction",
+            "amount": -244.0,
+            "date_posted": "2020-01-04T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "244 - 2 - two hundred fifty dollar expense",
+        "fields": {
+            "name": "two hundred fifty dollar transaction",
+            "memo": "two hundred fifty dollar transaction",
+            "amount": -244.0,
+            "date_posted": "2020-01-19T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "transfer from checking to savings",
+        "fields": {
+            "name": "outgoing transfer",
+            "memo": "outgoing transfer",
+            "amount": -100.0,
+            "date_posted": "2020-01-05T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "XFER",
+            "account": 1
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "transfer to savings from checking",
+        "fields": {
+            "name": "incoming transfer",
+            "memo": "incoming transfer",
+            "amount": 100.0,
+            "date_posted": "2020-01-06T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 2
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "savings to checking",
+        "fields": {
+            "name": "outgoing transfer",
+            "memo": "outgoing transfer",
+            "amount": -100.0,
+            "date_posted": "2020-01-15T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "XFER",
+            "account": 2
+        }
+    },
+    {
+        "model": "cash.transaction",
+        "pk": "checking from savings",
+        "fields": {
+            "name": "incoming transfer",
+            "memo": "incoming transfer",
+            "amount": 100.0,
+            "date_posted": "2020-01-16T00:00:00Z",
+            "check_number": null,
+            "transaction_type": "DEBIT",
+            "account": 1
+        }
+    }
+]

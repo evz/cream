@@ -83,9 +83,7 @@ def backfill_payperiods():
     payperiods = []
     for date_posted, paychecks in itertools.groupby(paychecks, key=lambda x: x.date_posted):
         paychecks = list(paychecks)
-        income = sum(p.amount for p in paychecks)
-        payperiod = PayPeriod(income=income,
-                              budgeted_income=0,
+        payperiod = PayPeriod(budgeted_income=0,
                               start_date=date_posted)
         payperiod.save()
         payperiod.transactions.set(paychecks, clear=True)
