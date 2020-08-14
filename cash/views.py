@@ -5,16 +5,18 @@ from ofxtools.utils import UTC
 
 from django.conf import settings
 from django.db import connection
+from django.db.models import Q
 from django.http import HttpResponse
 from django.contrib import messages
-from django.shortcuts import render
-from django.views.generic import ListView, DetailView
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from django.views.generic import ListView, DetailView, RedirectView
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
-from django.views.generic.edit import ModelFormMixin, ProcessFormView, CreateView, UpdateView
+from django.views.generic.edit import ModelFormMixin, ProcessFormView, CreateView, UpdateView, FormView
 
 from .models import PayPeriod, Expense, Transaction, Account, Transfer
-from .forms import ExpenseForm
+from .forms import ExpenseForm, PayPeriodForm
 from .tasks import process_file
 
 
@@ -60,12 +62,99 @@ class PayPeriodDetail(DetailView):
     slug_field = 'start_date'
 
 
-class CreateExpense(CreateView):
-    http_method_names = ['post']
-    model = Expense
+class PayPeriodCreateBase(CreateView):
+    model = PayPeriod
+    template_name = 'cash/create-payperiod.html'
+    form_class = PayPeriodForm
+
+
+class PayPeriodCreateFromTransaction(PayPeriodCreateBase):
+
+    def get(self, request, *args, **kwargs):
+        self.transaction = Transaction.objects.get(transaction_id=self.kwargs['transaction_id'])
+
+        try:
+            potential_payperiod = PayPeriod.objects.get(start_date=self.transaction.date_posted)
+            return redirect('{}?next={}'.format(reverse('update-payperiod', args=[potential_payperiod.id]),
+                                                request.GET.get('next')))
+        except PayPeriod.DoesNotExist:
+            return super().get(request, *args, **kwargs)
+
+    def get_form(self):
+        form = super().get_form_class()
+
+        if self.request.method == 'GET':
+            initial_data = {
+                'paychecks': [self.transaction],
+                'budgeted_income': abs(self.transaction.amount),
+                'start_date': self.transaction.date_posted.date
+            }
+            form = form(initial=initial_data)
+        else:
+            form = form(self.request.POST)
+
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['transaction'] = self.transaction
+        return context
 
     def get_success_url(self):
-        return reverse('payperiod-detail', kwargs={'slug': self.object.payperiod.slug})
+        if self.request.GET.get('next'):
+            return reverse(self.request.GET['next'])
+        return '/'
+
+
+class PayPeriodCreate(PayPeriodCreateBase):
+    def get_form(self):
+        form = super().get_form()
+
+        form.fields['paychecks'].queryset = Transaction.maybe_paychecks().filter(payperiod__isnull=True)
+
+        return form
+
+
+class PayPeriodUpdate(UpdateView):
+    model = PayPeriod
+    template_name = 'cash/update-payperiod.html'
+    form_class = PayPeriodForm
+
+    def get_form(self):
+        form = super().get_form()
+
+        form.fields['paychecks'].queryset = Transaction.objects.filter(date_posted=self.object.start_date)
+
+        return form
+
+    def get_success_url(self):
+        if self.request.GET.get('next'):
+            return reverse(self.request.GET['next'])
+        return '/'
+
+
+class CreateExpense(CreateView):
+    template_name = 'cash/create-expense.html'
+    form_class = ExpenseForm
+
+    def get_form(self):
+        form = super().get_form_class()
+
+        if self.request.GET.get('transaction_id'):
+            transaction = Transaction.objects.get(transaction_id=self.request.GET['transaction_id'])
+            initial_data = {
+                'transaction': transaction,
+                'budgeted_amount': abs(transaction.amount),
+            }
+            form = form(initial=initial_data)
+
+        elif self.request.method == 'POST':
+            form = form(self.request.POST)
+
+        return form
+
+    def get_success_url(self):
+        return reverse('incoming-transactions')
 
 
 class UpdateExpense(UpdateView):
@@ -77,67 +166,20 @@ class UpdateExpense(UpdateView):
         return reverse('payperiod-detail', kwargs={'slug': self.object.payperiod.slug})
 
 
-class ReconcileTransfers(TemplateView):
-    template_name = "cash/reconcile-transfers.html"
+class TransactionDetail(DetailView):
+    model = Transaction
+    template_name = 'cash/transaction-detail.html'
+
+
+class ReconcileTransactions(TemplateView):
+    template_name = "cash/reconcile-transactions.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        query = '''
-            SELECT
-              from_trans.transaction_id AS from_transaction_id,
-              to_trans.transaction_id AS to_transaction_id,
-              from_trans.amount AS from_amount,
-              to_trans.amount AS to_amount,
-              from_trans.date_posted AS from_date_posted,
-              to_trans.date_posted AS to_date_posted,
-              from_trans.memo AS from_memo,
-              to_trans.memo AS to_memo,
-              from_account.account_number AS from_account_number,
-              to_account.account_number AS to_account_number,
-              from_bank.name AS from_bank_name,
-              to_bank.name AS to_bank_name
-            FROM cash_transaction AS from_trans
-            JOIN cash_transaction AS to_trans
-              ON ABS(from_trans.amount) = to_trans.amount
-              AND from_trans.date_posted BETWEEN to_trans.date_posted AND (to_trans.date_posted + INTERVAL '3 days')
-              AND from_trans.transaction_id != to_trans.transaction_id
-            JOIN cash_account AS from_account
-              ON from_trans.account_id = from_account.id
-            JOIN cash_account AS to_account
-              ON to_trans.account_id = to_account.id
-            JOIN cash_financialinstitution AS from_bank
-              ON from_account.bank_id = from_bank.id
-            JOIN cash_financialinstitution AS to_bank
-              ON to_account.bank_id = to_bank.id
-            LEFT JOIN cash_transfer AS transfer
-              ON from_trans.transaction_id = transfer.transaction_from_id
-              AND to_trans.transaction_id = transfer.transaction_to_id
-            WHERE from_account.id != to_account.id
-              AND transfer.transaction_from_id IS NULL
-              AND transfer.transaction_to_id IS NULL
-            ORDER BY to_trans.date_posted DESC;
-        '''
-
-        with connection.cursor() as cursor:
-            cursor.execute(query)
-
-            context['proposed_transfers'] = self.dict_fetchall(cursor)
+        context['transactions'] = Transaction.objects.filter(Q(expense__isnull=True) & Q(payperiod__isnull=True)).order_by('-date_posted')
 
         return context
 
-    def dict_fetchall(self, cursor):
-        columns = [col[0] for col in cursor.description]
-        return [
-            dict(zip(columns, row))
-            for row in cursor.fetchall()
-        ]
-
     def post(self, request, *args, **kwargs):
-        transaction_from_id = request.POST['from_trans']
-        transaction_to_id = request.POST['to_trans']
-        reason = request.POST['reason']
-        transfer = Transfer.objects.create(transaction_from_id=transaction_from_id,
-                                           transaction_to_id=transaction_to_id,
-                                           reason=reason)
         return self.render_to_response(self.get_context_data(**kwargs))

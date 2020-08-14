@@ -76,10 +76,7 @@ def update_transactions():
 
 @app.task
 def backfill_payperiods():
-    paychecks = Transaction.objects.filter(transaction_type='DIRECTDEP')\
-                                   .filter(Q(memo__icontains="paypal") | Q(memo__icontains="mcgraw-hill"))\
-                                   .exclude(Q(memo__icontains="edi") | Q(memo__icontains="paypal transfer"))\
-                                   .order_by('date_posted')
+    paychecks = Transaction.maybe_paychecks()
     payperiods = []
     for date_posted, paychecks in itertools.groupby(paychecks, key=lambda x: x.date_posted):
         paychecks = list(paychecks)

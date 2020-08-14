@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load formatting %}
+
+{% block title %}
+{% if transaction %}
+Create a new Pay Period from Transaction - {{ transaction.date_posted|date:"F j, Y" }} {{ transaction.amount|format_money }}
+{% else %}
+Create a new expense
+{% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="grid-x grid-margin-x">
+      <div class="cell">
+        <h1>
+          {% if transaction %}
+            New Pay Period <small>{{ transaction.date_posted|date:"F j, Y" }} {{ transaction.amount|format_money }}</small>
+          {% else %}
+            Create a new Pay Period
+          {% endif %}
+        </h1>
+      </div>
+      {% if transaction %}
+      <div class="cell">
+        <table>
+          <tbody>
+            <tr>
+              <td><strong>Date posted</strong></td>
+              <td>{{ transaction.date_posted|date:"F j, Y" }}
+            </tr>
+            <tr>
+              <td><strong>Amount</strong></td>
+              <td>{{ transaction.amount|format_money }}</td>
+            </tr>
+            <tr>
+              <td><strong>Description</strong></td>
+              <td>{{ transaction.memo }}</td>
+            </tr>
+            <tr>
+              <td><strong>Account</strong></td>
+              <td>{{ transaction.account.bank.name }} - {{ transaction.account.account_number }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+      <div class="cell">
+        <form method="POST">
+          <div class="grid-container">
+            <div class="grid-x grid-padding-x">
+                {% csrf_token %}
+                {% if not transaction %}
+                  <div class="cell small-1">
+                    {{ form.budgeted_income.label_tag }}
+                  </div>
+                  <div class="cell small-5">
+                    {{ form.budgeted_income }}
+                  </div>
+                  <div class="cell small-1">
+                    {{ form.start_date.label_tag }}
+                  </div>
+                  <div class="cell small-5">
+                    {{ form.start_date }}
+                  </div>
+                  <div class="cell small-1">
+                    {{ form.paychecks.label_tag }}
+                  </div>
+                  <div class="cell small-11">
+                    {{ form.paychecks }}
+                  </div>
+                {% endif %}
+                {{ form.budgeted_income.as_hidden }}
+                {{ form.start_date.as_hidden }}
+                {{ form.paychecks.as_hidden }}
+                <div class="cell">
+                  <input type="submit" class="button" value="Save?" />
+                </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+{% endblock %}

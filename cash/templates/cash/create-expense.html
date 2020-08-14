@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load formatting %}
+
+{% block title %}
+{% if form.transaction.initial %}
+Create a new expense from Transaction - {{ form.transaction.initial.date_posted|date:"F j, Y" }} {{ form.transaction.initial.amount|format_money }}
+{% else %}
+Create a new expense
+{% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="grid-x grid-margin-x">
+      <div class="cell">
+        <h1>
+          {% if form.transaction.initial %}
+            New expense <small>{{ form.transaction.initial.date_posted|date:"F j, Y" }} {{ form.transaction.initial.amount|format_money }}</small>
+          {% else %}
+            Create a new expense
+          {% endif %}
+        </h1>
+      </div>
+      {% if form.transaction.initial %}
+      <div class="cell">
+        <table>
+          <tbody>
+            <tr>
+              <td><strong>Date posted</strong></td>
+              <td>{{ form.transaction.initial.date_posted|date:"F j, Y" }}
+            </tr>
+            <tr>
+              <td><strong>Amount</strong></td>
+              <td>{{ form.transaction.initial.amount|format_money }}</td>
+            </tr>
+            <tr>
+              <td><strong>Description</strong></td>
+              <td>{{ form.transaction.initial.memo }}</td>
+            </tr>
+            <tr>
+              <td><strong>Account</strong></td>
+              <td>{{ form.transaction.initial.account.bank.name }} - {{ form.transaction.initial.account.account_number }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+      <div class="cell">
+        <form method="POST" action="{% url 'create-expense' %}">
+          <div class="grid-container">
+            <div class="grid-x grid-padding-x">
+                {% csrf_token %}
+                {% if not form.transaction.initial %}
+                <div class="cell small-6">
+                  {{ form.budgeted_amount.label_tag }}
+                  {{ form.budgeted_amount }}
+                </div>
+                <div class="cell small-6">
+                  {{ form.transaction.label_tag }}
+                  {{ form.transaction }}
+                </div>
+                {% else %}
+                  {{ form.budgeted_amount.as_hidden }}
+                  {{ form.transaction.as_hidden }}
+                {% endif %}
+                <div class="cell small-1">
+                  <label for="id_payperiod" class="text-right">Pay Period:</label>
+                </div>
+                <div class="cell small-8">
+                  {{ form.payperiod }}
+                </div>
+                <div class="cell small-3">
+                    <a class="button" href="{% url 'create-payperiod-from-transaction' form.transaction.value %}?next=create-expense">Create a new Pay Period</a>
+                </div>
+                <div class="cell small-1">
+                  <label for="id_description" class="text-right middle">Description:</label>
+                </div>
+                <div class="cell small-11">
+                  {{ form.description }}
+                <div class="cell">
+                  <input type="submit" class="button" value="Save?" />
+                </div>
+                </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+{% endblock %}

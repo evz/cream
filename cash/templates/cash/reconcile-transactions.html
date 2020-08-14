@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load formatting %}
+
+{% block title %}Cash Rules Everything Around Me{% endblock %}
+
+{% block content %}
+    <h1>
+        Incoming transactions
+    </h1>
+    
+    <p>The transactions in the table below have yet to be associated with expenses or labelled as a paycheck or transfer to another account.</p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Amount</th>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Account</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for transaction in transactions %}
+          <tr>
+            <td>{{ transaction.amount|format_money }}</td> 
+            <td>{{ transaction.date_posted|date:"F j, Y" }}</td> 
+            <td>
+              {{ transaction.memo }}
+            </td> 
+            <td>
+              {{ transaction.account.bank.name }} - {{ transaction.account.account_number }}
+            </td> 
+            <td>
+              <a class="button" href="{% url 'transaction-detail' transaction.transaction_id %}">Reconcile</a>
+            </td> 
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load formatting %}
+
+{% block title %}
+Update Pay Period {{ object.start_date|date:"F j, Y" }} {{ object.income|format_money }}
+{% endblock %}
+
+{% block content %}
+    <div class="grid-x grid-margin-x">
+      <div class="cell">
+        <h1>
+          Update Pay Period {{ object.start_date|date:"F j, Y" }} {{ object.income|format_money }}
+        </h1>
+      </div>
+      <div class="cell">
+        <form method="POST">
+          <div class="grid-container">
+            <div class="grid-x grid-padding-x">
+                {% csrf_token %}
+                <div class="cell small-1">
+                  {{ form.budgeted_income.label_tag }}
+                </div>
+                <div class="cell small-5">
+                  {{ form.budgeted_income }}
+                </div>
+                <div class="cell small-1">
+                  {{ form.start_date.label_tag }}
+                </div>
+                <div class="cell small-5">
+                  {{ form.start_date }}
+                </div>
+                <div class="cell small-1">
+                  {{ form.paychecks.label_tag }}
+                </div>
+                <div class="cell small-11">
+                  {{ form.paychecks }}
+                </div>
+                <div class="cell">
+                  <input type="submit" class="button" value="Save?" />
+                </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+{% endblock %}

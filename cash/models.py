@@ -12,9 +12,9 @@ from ofxtools.Parser import OFXTree
 
 class PayPeriod(models.Model):
     budgeted_income = models.FloatField()
-    start_date = models.DateField()
+    start_date = models.DateField(unique=True)
     paychecks = models.ManyToManyField("Transaction")
-    slug = models.SlugField(null=True)
+    slug = models.SlugField(null=True, blank=True)
     _carry_over = models.FloatField(null=True, blank=True)
 
     def __str__(self):
@@ -124,6 +124,12 @@ class Transaction(models.Model):
     def __str__(self):
         return '{} - {}'.format(self.name, self.date_posted.isoformat())
 
+    @classmethod
+    def maybe_paychecks(self):
+        return Transaction.objects.filter(transaction_type='DIRECTDEP')\
+                                  .filter(Q(memo__icontains="paypal") | Q(memo__icontains="mcgraw-hill"))\
+                                  .exclude(Q(memo__icontains="edi") | Q(memo__icontains="paypal transfer"))\
+                                  .order_by('date_posted')
 
 class FinancialInstitution(models.Model):
     name = models.CharField(max_length=255)

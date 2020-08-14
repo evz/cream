@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load formatting %}
+
+{% block title %}Transaction - {{ transaction.date_posted|date:"F j, Y" }} {{ transaction.amount|format_money }}{% endblock %}
+
+{% block content %}
+    <div class="grid-x grid-margin-x">
+      <div class="cell">
+      <h1>
+        Transaction - {{ transaction.date_posted|date:"F j, Y" }} {{ transaction.amount|format_money }}
+      </h1>
+      </div>
+      <div class="cell small-9">
+      <table>
+        <tbody>
+          <tr>
+            <td><strong>Date posted</strong></td>
+            <td>{{ transaction.date_posted|date:"F j, Y" }}
+          </tr>
+          <tr>
+            <td><strong>Amount</strong></td>
+            <td>{{ transaction.amount|format_money }}</td>
+          </tr>
+          <tr>
+            <td><strong>Description</strong></td>
+            <td>{{ transaction.memo }}</td>
+          </tr>
+          <tr>
+            <td><strong>Account</strong></td>
+            <td>{{ transaction.account.bank.name }} - {{ transaction.account.account_number }}</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="cell small-3">
+        <div class="stacked button-group">
+          <a class="button" href="{% url 'create-expense' %}?transaction_id={{ transaction.transaction_id }}">New expense</a>
+					<a class="button">Existing expense</a>
+					<a class="button" href="{% url 'create-payperiod-from-transaction' transaction.transaction_id %}?next=incoming-transactions">Paycheck</a>
+					<a class="button">Transfer</a>
+			  </div> 
+      </div>
+    </div>
+{% endblock %}
