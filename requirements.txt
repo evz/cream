@@ -6,3 +6,5 @@ certifi
 ofxtools==0.8.21
 celery==4.4.6
 django-celery-results==1.2.1
+django-celery-beat==2.0.0
+redis==3.5.3
