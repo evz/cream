@@ -15,43 +15,34 @@
         <thead>
             <tr>
                 <th>Description</th>
-                <th>Budgeted amount</th>
-                <th>Actual amount</th>
+                <th>Amount</th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
             {% for expense in payperiod.expense_set.all %}
-                <form method="POST" action="{% url 'update-expense' expense.id %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="description" value="{{ expense.description }}" />
-                    <input type="hidden" name="budgeted_amount" value="{{ expense.budgeted_amount }}" />
-                    {% if expense.actual_amount %}
-                        <input type="hidden" name="actual_amount" value="{{ expense.actual_amount }}" />
-                    {% endif %}
-                    <tr>
-                        <td>
-                            {{ expense.description }}
-                        </td>
-                        <td>
-                            {{ expense.budgeted_amount|format_money }}
-                        </td>
-                        <td>
-                            {% if expense.actual_amount %}
-                                {{ expense.actual_amount|format_money }}
-                            {% else %}
-                                <input type="text" name="actual_amount" placeholder="Actual amount ..." />
-                            {% endif %}
-                        </td>
-                        <td>
-                            <button type="submit" class="success button"> <i class="fi-save"> </i> Save</button>
-                        </td>
-                    </tr>
-                </form>
-            {% endfor%}
-            <form method="POST" action="{% url 'create-expense' %}">
-                {% csrf_token %}
                 <tr>
+                    <td>
+                        {{ expense.description }}
+                    </td>
+                    <td>
+                        {{ expense.budgeted_amount|format_money }}
+                        {% if expense.transaction %}
+                            <br />
+                            Actual: {{ expense.transaction.amount|format_money }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a class="success button" href="{% url 'update-expense' expense.id %}">
+                            <i class="fi-edit"> </i> Edit
+                        </a>
+                    </td>
+                </tr>
+            {% endfor%}
+            <tr>
+                <form method="POST" action="{% url 'create-expense' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="payperiod" value="{{ object.id }}">
                     <td>
                         <input type="text" name="description" placeholder="Description ..." />
                     </td>
@@ -59,13 +50,10 @@
                         <input type="text" name="budgeted_amount" placeholder="Budgeted amount ..." />
                     </td>
                     <td>
-                        <input type="text" name="actual_amount" placeholder="Actual amount ..." />
-                    </td>
-                    <td>
                         <button type="submit" class="success button"> <i class="fi-plus"> </i> Add</button>
                     </td>
-                </tr>
-            </form>
+                </form>
+            </tr>
         </tbody>
     </table>
 {% endblock %}

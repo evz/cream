@@ -55,23 +55,27 @@ Create a new expense
                   </div>
                   <div class="cell small-5">
                     {{ form.budgeted_income }}
+                    {{ form.budgeted_income.errors }}
                   </div>
                   <div class="cell small-1">
                     {{ form.start_date.label_tag }}
                   </div>
                   <div class="cell small-5">
                     {{ form.start_date }}
+                    {{ form.start_date.errors }}
                   </div>
                   <div class="cell small-1">
                     {{ form.paychecks.label_tag }}
                   </div>
                   <div class="cell small-11">
                     {{ form.paychecks }}
+                    {{ form.paychecks.errors }}
                   </div>
-                {% endif %}
+                {% else %}
                 {{ form.budgeted_income.as_hidden }}
                 {{ form.start_date.as_hidden }}
                 {{ form.paychecks.as_hidden }}
+                {% endif %}
                 <div class="cell">
                   <input type="submit" class="button" value="Save?" />
                 </div>
@@ -80,4 +84,7 @@ Create a new expense
         </form>
       </div>
     </div>
+{% endblock %}
+{% block extra_js %}
+    {{ form.media }}
 {% endblock %}

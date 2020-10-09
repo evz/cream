@@ -15,6 +15,8 @@ from django.views.generic.base import TemplateView
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import ModelFormMixin, ProcessFormView, CreateView, UpdateView, FormView
 
+from dal import autocomplete
+
 from .models import PayPeriod, Expense, Transaction, Account, Transfer
 from .forms import ExpenseForm, PayPeriodForm
 from .tasks import process_file
@@ -25,7 +27,15 @@ class IndexView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['payperiods'] = PayPeriod.objects.order_by('start_date')
+        context['payperiods'] = PayPeriod.objects.order_by('-start_date')
+        return context
+
+
+class UploadCSVView(TemplateView):
+    template_name = 'cash/upload-csv.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         context['accounts'] = Account.objects.all()
         return context
 
@@ -67,6 +77,11 @@ class PayPeriodCreateBase(CreateView):
     template_name = 'cash/create-payperiod.html'
     form_class = PayPeriodForm
 
+    def get_success_url(self):
+        if self.request.GET.get('next'):
+            return reverse(self.request.GET['next'])
+        return '/'
+
 
 class PayPeriodCreateFromTransaction(PayPeriodCreateBase):
 
@@ -100,19 +115,9 @@ class PayPeriodCreateFromTransaction(PayPeriodCreateBase):
         context['transaction'] = self.transaction
         return context
 
-    def get_success_url(self):
-        if self.request.GET.get('next'):
-            return reverse(self.request.GET['next'])
-        return '/'
-
 
 class PayPeriodCreate(PayPeriodCreateBase):
-    def get_form(self):
-        form = super().get_form()
-
-        form.fields['paychecks'].queryset = Transaction.maybe_paychecks().filter(payperiod__isnull=True)
-
-        return form
+    pass
 
 
 class PayPeriodUpdate(UpdateView):
@@ -154,13 +159,13 @@ class CreateExpense(CreateView):
         return form
 
     def get_success_url(self):
-        return reverse('incoming-transactions')
+        return reverse('payperiod-detail', kwargs={'slug': self.object.payperiod.slug})
 
 
 class UpdateExpense(UpdateView):
-    http_method_names = ['post']
     model = Expense
     form_class = ExpenseForm
+    template_name = 'cash/update-expense.html'
 
     def get_success_url(self):
         return reverse('payperiod-detail', kwargs={'slug': self.object.payperiod.slug})
@@ -183,3 +188,33 @@ class ReconcileTransactions(TemplateView):
 
     def post(self, request, *args, **kwargs):
         return self.render_to_response(self.get_context_data(**kwargs))
+
+
+class TransactionAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        queryset = Transaction.objects.filter(expense__isnull=True)
+
+        if self.q:
+            queryset = queryset.filter(memo__icontains=self.q)
+
+        if self.request.GET.get('payperiod_id'):
+            payperiod = PayPeriod.objects.get(id=id)
+
+            if payperiod.previous_payperiod:
+                offset = payperiod.previous_payperiod.start_date
+            else:
+                offset = payperiod.start_date - timedelta(days=15)
+
+            queryset = queryset.filter(date_posted__gt=offset).filter(date_posted__lt=payperiod.start_date)
+
+        return queryset
+
+
+class PaycheckAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        queryset = Transaction.maybe_paychecks().filter(payperiod__isnull=True)
+
+        if self.q:
+            queryset = queryset.filter(memo__icontains=self.q)
+
+        return queryset

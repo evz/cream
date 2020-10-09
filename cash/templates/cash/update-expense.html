@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load formatting %}
+
+{% block title %}
+Update expense
+{% endblock %}
+
+{% block content %}
+    <div class="grid-x grid-margin-x">
+      <div class="cell">
+        <h1>
+            Update expense
+        </h1>
+      </div>
+      <div class="cell">
+        <form method="POST" action="{% url 'update-expense' object.id %}">
+          <div class="grid-container">
+            <div class="grid-x grid-padding-x">
+                {% csrf_token %}
+                <div class="cell small-1">
+                  <label for="id_payperiod" class="text-right">Pay Period:</label>
+                </div>
+                <div class="cell small-5">
+                  {{ form.payperiod }}
+                </div>
+                <div class="cell small-1">
+                  <label for="id_budgeted_amount" class="text-right">Budgeted amount:</label>
+                </div>
+                <div class="cell small-5">
+                  {{ form.budgeted_amount }}
+                </div>
+                <div class="cell small-1">
+                  <label for="id_transaction" class="text-right middle">Transaction:</label>
+                </div>
+                <div class="cell small-11">
+                    {{ form.transaction }}
+                </div>
+                <div class="cell small-1">
+                  <label for="id_description" class="text-right middle">Description:</label>
+                </div>
+                <div class="cell small-11">
+                  {{ form.description }}
+                </div>
+                <div class="cell">
+                  <input type="submit" class="button" value="Save?" />
+                </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    {{ form.media }}
+{% endblock %}

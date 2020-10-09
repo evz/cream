@@ -64,7 +64,7 @@ class TransactionMachine(object):
 @app.task
 def update_transactions():
     # Only load Schwab for the moment
-    banks = FinancialInstitution.objects.filter(id=4)
+    banks = FinancialInstitution.objects.filter(id=1)
 
     update_results = []
     for bank in banks:

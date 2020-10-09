@@ -58,7 +58,7 @@ class PayPeriod(models.Model):
         total_expenses = Expense.objects.filter(payperiod=self)\
                                         .aggregate(total_expenses=expression)
 
-        if total_expenses:
+        if total_expenses['total_expenses']:
             return total_expenses['total_expenses']
 
         return 0
@@ -72,11 +72,13 @@ class Expense(models.Model):
     budgeted_amount = models.FloatField()
     payperiod = models.ForeignKey(PayPeriod,
                                   on_delete=models.SET_NULL,
-                                  null=True)
+                                  null=True,
+                                  blank=True)
     description = models.CharField(max_length=1000)
     transaction = models.ForeignKey("Transaction",
                                     on_delete=models.SET_NULL,
-                                    null=True)
+                                    null=True,
+                                    blank=True)
 
     def __str__(self):
         if self.transaction:
@@ -122,7 +124,7 @@ class Transaction(models.Model):
     account = models.ForeignKey("Account", on_delete=models.CASCADE)
 
     def __str__(self):
-        return '{} - {}'.format(self.name, self.date_posted.isoformat())
+        return '{} - {} - ${}'.format(self.name, self.date_posted.date().isoformat(), self.amount)
 
     @classmethod
     def maybe_paychecks(self):

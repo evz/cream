@@ -8,3 +8,4 @@ celery==4.4.6
 django-celery-results==1.2.1
 django-celery-beat==2.0.0
 redis==3.5.3
+django-autocomplete-light==3.5.1

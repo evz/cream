@@ -69,7 +69,15 @@ Create a new expense
                   {{ form.payperiod }}
                 </div>
                 <div class="cell small-3">
-                    <a class="button" href="{% url 'create-payperiod-from-transaction' form.transaction.value %}?next=create-expense">Create a new Pay Period</a>
+                    {% if form.transaction.initial %}
+                        <a class="button" href="{% url 'create-payperiod-from-transaction' form.transaction.value %}?next=create-expense">
+                            Create a new Pay Period
+                        </a>
+                    {% else %}
+                        <a class="button" href="{% url 'create-payperiod' %}?next=create-expense">
+                            Create a new Pay Period
+                        </a>
+                    {% endif %}
                 </div>
                 <div class="cell small-1">
                   <label for="id_description" class="text-right middle">Description:</label>
@@ -85,4 +93,7 @@ Create a new expense
         </form>
       </div>
     </div>
+{% endblock %}
+{% block extra_js %}
+    {{ form.media }}
 {% endblock %}
