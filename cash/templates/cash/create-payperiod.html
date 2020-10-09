@@ -9,6 +9,11 @@ Create a new expense
 {% endif %}
 {% endblock %}
 
+{% block extra_css %}
+{{ form.media.css }}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
 {% block content %}
     <div class="grid-x grid-margin-x">
       <div class="cell">
@@ -71,6 +76,13 @@ Create a new expense
                     {{ form.paychecks }}
                     {{ form.paychecks.errors }}
                   </div>
+                  <div class="cell small-1">
+                    {{ form.recurrences.label_tag }}
+                  </div>
+                  <div class="cell small-11">
+                    {{ form.recurrences }}
+                    {{ form.recurrences.errors }}
+                  </div>
                 {% else %}
                 {{ form.budgeted_income.as_hidden }}
                 {{ form.start_date.as_hidden }}
@@ -86,5 +98,19 @@ Create a new expense
     </div>
 {% endblock %}
 {% block extra_js %}
-    {{ form.media }}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+    <script type="text/javascript" src="/admin/jsi18n/">
+    <script type="text/javascript" src="/static/admin/js/core.js">
+    {{ form.media.js }}
+    <script type="text/javascript">
+        django.jQuery(document).ready(function() {
+            django.jQuery('#id_paychecks').select2({
+                ajax: {
+                    url: '{% url "paycheck-autocomplete" %}',
+                    dataType: 'json'
+                },
+                multiple: true
+            })
+        })
+    </script>
 {% endblock %}

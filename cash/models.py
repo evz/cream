@@ -9,12 +9,15 @@ from ofxtools.utils import UTC as OFX_UTC
 from ofxtools.Client import OFXClient, StmtRq
 from ofxtools.Parser import OFXTree
 
+from recurrence.fields import RecurrenceField
+
 
 class PayPeriod(models.Model):
     budgeted_income = models.FloatField()
     start_date = models.DateField(unique=True)
     paychecks = models.ManyToManyField("Transaction")
     slug = models.SlugField(null=True, blank=True)
+    recurrences = RecurrenceField(null=True)
     _carry_over = models.FloatField(null=True, blank=True)
 
     def __str__(self):

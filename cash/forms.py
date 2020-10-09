@@ -1,4 +1,4 @@
-from django.forms import ModelForm
+from django.forms import ModelForm, Select
 
 from dal import autocomplete
 
@@ -27,7 +27,3 @@ class PayPeriodForm(ModelForm):
     class Meta:
         model = PayPeriod
         fields = '__all__'
-
-        widgets = {
-            'paychecks': autocomplete.ModelSelect2Multiple(url='paycheck-autocomplete')
-        }

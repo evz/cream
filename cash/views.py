@@ -117,7 +117,12 @@ class PayPeriodCreateFromTransaction(PayPeriodCreateBase):
 
 
 class PayPeriodCreate(PayPeriodCreateBase):
-    pass
+    def get_form(self):
+        form = super().get_form()
+
+        form.fields['paychecks'].queryset = Transaction.objects.none()
+
+        return form
 
 
 class PayPeriodUpdate(UpdateView):

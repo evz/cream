@@ -1,5 +1,6 @@
 Django>=3.0, < 3.1
-django-recurrence==1.7.0
+# django-recurrence==1.10.3
+-e git+https://github.com/jleclanche/django-recurrence.git@master#egg=django-recurrence
 psycopg2==2.8.5
 gunicorn==20.0.4
 certifi
