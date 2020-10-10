@@ -2,43 +2,47 @@
 {% load formatting %}
 
 {% block title %}
-{% if form.transaction.initial %}
-Create a new expense from Transaction - {{ form.transaction.initial.date_posted|date:"F j, Y" }} {{ form.transaction.initial.amount|format_money }}
+{% if transaction %}
+Create a new expense from Transaction - {{ transaction.date_posted|date:"F j, Y" }} {{ transaction.amount|format_money }}
 {% else %}
 Create a new expense
 {% endif %}
+{% endblock %}
+{% block extra_css %}
+    {{ form.media.css }}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
     <div class="grid-x grid-margin-x">
       <div class="cell">
         <h1>
-          {% if form.transaction.initial %}
-            New expense <small>{{ form.transaction.initial.date_posted|date:"F j, Y" }} {{ form.transaction.initial.amount|format_money }}</small>
+          {% if transaction %}
+            New expense <small>{{ transaction.date_posted|date:"F j, Y" }} {{ transaction.amount|format_money }}</small>
           {% else %}
             Create a new expense
           {% endif %}
         </h1>
       </div>
-      {% if form.transaction.initial %}
+      {% if transaction %}
       <div class="cell">
         <table>
           <tbody>
             <tr>
               <td><strong>Date posted</strong></td>
-              <td>{{ form.transaction.initial.date_posted|date:"F j, Y" }}
+              <td>{{ transaction.date_posted|date:"F j, Y" }}
             </tr>
             <tr>
               <td><strong>Amount</strong></td>
-              <td>{{ form.transaction.initial.amount|format_money }}</td>
+              <td>{{ transaction.amount|format_money }}</td>
             </tr>
             <tr>
               <td><strong>Description</strong></td>
-              <td>{{ form.transaction.initial.memo }}</td>
+              <td>{{ transaction.memo }}</td>
             </tr>
             <tr>
               <td><strong>Account</strong></td>
-              <td>{{ form.transaction.initial.account.bank.name }} - {{ form.transaction.initial.account.account_number }}</td>
+              <td>{{ transaction.account.bank.name }} - {{ transaction.account.account_number }}</td>
             </tr>
           </tbody>
         </table>
@@ -49,44 +53,44 @@ Create a new expense
           <div class="grid-container">
             <div class="grid-x grid-padding-x">
                 {% csrf_token %}
-                {% if not form.transaction.initial %}
+                {% if not transaction %}
                 <div class="cell small-6">
-                  {{ form.budgeted_amount.label_tag }}
-                  {{ form.budgeted_amount }}
+                    {{ form.budgeted_amount.label_tag }}
+                    {{ form.budgeted_amount }}
+                    {{ form.budgeted_amount.errors }}
                 </div>
                 <div class="cell small-6">
-                  {{ form.transaction.label_tag }}
-                  {{ form.transaction }}
-                </div>
-                {% else %}
-                  {{ form.budgeted_amount.as_hidden }}
-                  {{ form.transaction.as_hidden }}
-                {% endif %}
-                <div class="cell small-1">
-                  <label for="id_payperiod" class="text-right">Pay Period:</label>
-                </div>
-                <div class="cell small-8">
-                  {{ form.payperiod }}
-                </div>
-                <div class="cell small-3">
-                    {% if form.transaction.initial %}
-                        <a class="button" href="{% url 'create-payperiod-from-transaction' form.transaction.value %}?next=create-expense">
-                            Create a new Pay Period
-                        </a>
-                    {% else %}
-                        <a class="button" href="{% url 'create-payperiod' %}?next=create-expense">
-                            Create a new Pay Period
-                        </a>
-                    {% endif %}
+                    {{ form.budgeted_date.label_tag }}
+                    {{ form.budgeted_date }}
+                    {{ form.budgeted_date.errors }}
                 </div>
                 <div class="cell small-1">
-                  <label for="id_description" class="text-right middle">Description:</label>
+                    <label for="id_transactions" class="text-right">Transactions:</label>
                 </div>
                 <div class="cell small-11">
-                  {{ form.description }}
-                <div class="cell">
-                  <input type="submit" class="button" value="Save?" />
+                    <select id="id_transactions" name="transactions" multiple></select>
                 </div>
+                {% else %}
+                    <input type="hidden" name="budgeted_amount" value="{{ transaction.amount|force_positive }}">
+                    <input type="hidden" name="transactions" value="{{ transaction.transaction_id }}">
+                    <input type="hidden" name="budgeted_date" value="{{ transaction.date_posted }}">
+                {% endif %}
+                <div class="cell small-1">
+                    <label for="id_description" class="text-right middle">Description:</label>
+                </div>
+                <div class="cell small-11">
+                    {{ form.description }}
+                    {{ form.description.errors }}
+                </div>
+                <div class="cell small-1">
+                    {{ form.recurrences.label_tag }}
+                </div>
+                <div class="cell small-11">
+                    {{ form.recurrences }}
+                    {{ form.recurrences.errors }}
+                </div>
+                <div class="cell">
+                    <input type="submit" class="button" value="Save?" />
                 </div>
             </div>
           </div>
@@ -95,5 +99,19 @@ Create a new expense
     </div>
 {% endblock %}
 {% block extra_js %}
-    {{ form.media }}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+    <script type="text/javascript" src="/admin/jsi18n/">
+    <script type="text/javascript" src="/static/admin/js/core.js">
+    {{ form.media.js }}
+    <script type="text/javascript">
+        django.jQuery(document).ready(function() {
+            django.jQuery('#id_transactions').select2({
+                ajax: {
+                    url: '{% url "transaction-autocomplete" %}',
+                    dataType: 'json'
+                },
+                multiple: true
+            })
+        })
+    </script>
 {% endblock %}

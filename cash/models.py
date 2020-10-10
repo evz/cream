@@ -17,7 +17,7 @@ class PayPeriod(models.Model):
     start_date = models.DateField(unique=True)
     paychecks = models.ManyToManyField("Transaction")
     slug = models.SlugField(null=True, blank=True)
-    recurrences = RecurrenceField(null=True)
+    recurrences = RecurrenceField(null=True, blank=True)
     _carry_over = models.FloatField(null=True, blank=True)
 
     def __str__(self):
@@ -44,6 +44,13 @@ class PayPeriod(models.Model):
             return None
 
     @property
+    def next_payperiod(self):
+        try:
+            return self.get_next_by_start_date()
+        except PayPeriod.DoesNotExist:
+            return None
+
+    @property
     def carry_over(self):
         if self._carry_over:
             return self._carry_over
@@ -66,6 +73,14 @@ class PayPeriod(models.Model):
 
         return 0
 
+    def expense_date_range(self):
+        if self.next_payperiod:
+            end_date = (self.next_payperiod.start_date - timedelta(days=1)).date()
+        else:
+            end_date = (self.start_date + timedelta(days=14)).date()
+
+        return self.start_date, end_date
+
     def save(self, **kwargs):
         self.slug = str(self)
         return super().save(**kwargs)
@@ -73,25 +88,25 @@ class PayPeriod(models.Model):
 
 class Expense(models.Model):
     budgeted_amount = models.FloatField()
+    budgeted_date = models.DateField(null=True)
     payperiod = models.ForeignKey(PayPeriod,
                                   on_delete=models.SET_NULL,
                                   null=True,
                                   blank=True)
     description = models.CharField(max_length=1000)
-    transaction = models.ForeignKey("Transaction",
-                                    on_delete=models.SET_NULL,
-                                    null=True,
-                                    blank=True)
+    recurrences = RecurrenceField(null=True, blank=True)
 
     def __str__(self):
-        if self.transaction:
-            return '{0} - {1} (${2})'.format(self.description,
-                                             self.payperiod,
-                                             self.transaction.amount)
+        transactions = self.transaction_set.all()
+        args = [self.description, self.payperiod]
+
+        if transactions:
+            total_amount = sum(t.amount for t in transactions)
+            args.append(total_amount)
         else:
-            return '{0} - {1} (${2})'.format(self.description,
-                                             self.payperiod,
-                                             self.budgeted_amount)
+            args.append(self.budgeted_amount)
+
+        return '{0} - {1} (${2})'.format(*args)
 
 
 TRANSACTION_TYPES = [
@@ -125,6 +140,10 @@ class Transaction(models.Model):
     check_number = models.IntegerField(null=True)
     transaction_type = models.CharField(max_length=11, choices=TRANSACTION_TYPES)
     account = models.ForeignKey("Account", on_delete=models.CASCADE)
+    expense = models.ForeignKey("Expense",
+                                null=True,
+                                blank=True,
+                                on_delete=models.PROTECT)
 
     def __str__(self):
         return '{} - {} - ${}'.format(self.name, self.date_posted.date().isoformat(), self.amount)

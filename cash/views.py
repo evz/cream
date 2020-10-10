@@ -5,7 +5,8 @@ from ofxtools.utils import UTC
 
 from django.conf import settings
 from django.db import connection
-from django.db.models import Q
+from django.db.models import Q, CharField
+from django.db.models.functions import Cast
 from django.http import HttpResponse
 from django.contrib import messages
 from django.shortcuts import render, redirect
@@ -14,6 +15,7 @@ from django.views.generic import ListView, DetailView, RedirectView
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import SingleObjectTemplateResponseMixin
 from django.views.generic.edit import ModelFormMixin, ProcessFormView, CreateView, UpdateView, FormView
+from django.utils.text import slugify
 
 from dal import autocomplete
 
@@ -124,6 +126,25 @@ class PayPeriodCreate(PayPeriodCreateBase):
 
         return form
 
+    def form_valid(self, form):
+        valid = super().form_valid(form)
+
+        if self.object.recurrences:
+            start_dt = datetime.combine(self.object.start_date, datetime.min.time())
+            recurrences = self.object.recurrences.between((start_dt + timedelta(days=1)),
+                                                         (start_dt + timedelta(days=365)))
+
+            new_payperiods = []
+
+            for recurrence in recurrences:
+                payperiod = PayPeriod(start_date=recurrence.date(),
+                                      budgeted_income=self.object.budgeted_income,
+                                      slug=recurrence.date().isoformat()[:10])
+                new_payperiods.append(payperiod)
+
+            PayPeriod.objects.bulk_create(new_payperiods)
+
+        return valid
 
 class PayPeriodUpdate(UpdateView):
     model = PayPeriod
@@ -146,25 +167,46 @@ class PayPeriodUpdate(UpdateView):
 class CreateExpense(CreateView):
     template_name = 'cash/create-expense.html'
     form_class = ExpenseForm
+    success_url = '/'
 
-    def get_form(self):
-        form = super().get_form_class()
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
 
         if self.request.GET.get('transaction_id'):
             transaction = Transaction.objects.get(transaction_id=self.request.GET['transaction_id'])
-            initial_data = {
-                'transaction': transaction,
-                'budgeted_amount': abs(transaction.amount),
-            }
-            form = form(initial=initial_data)
+            context['transaction'] = transaction
 
-        elif self.request.method == 'POST':
-            form = form(self.request.POST)
+        return context
 
-        return form
+    def form_valid(self, form):
+        valid = super().form_valid(form)
 
-    def get_success_url(self):
-        return reverse('payperiod-detail', kwargs={'slug': self.object.payperiod.slug})
+        if self.object.recurrences:
+            start_dt = datetime.combine(self.object.budgeted_date, datetime.min.time())
+            recurrences = self.object.recurrences.between((start_dt + timedelta(days=1)),
+                                                         (start_dt + timedelta(days=365)))
+
+            new_expenses = []
+
+            for recurrence in recurrences:
+                payperiod = PayPeriod.objects.filter(start_date__lte=recurrence.date()).order_by('-start_date').first()
+                expense = Expense(budgeted_date=recurrence.date(),
+                                  budgeted_amount=self.object.budgeted_amount,
+                                  description=self.object.description,
+                                  payperiod=payperiod)
+                new_expenses.append(expense)
+
+            Expense.objects.bulk_create(new_expenses)
+
+        payperiod = PayPeriod.objects.filter(start_date__lte=self.object.budgeted_date).order_by('-start_date').first()
+
+        if payperiod:
+            self.object.payperiod = payperiod
+            self.object.save()
+
+            self.success_url = reverse('payperiod-detail', kwargs={'slug': self.object.payperiod.slug})
+
+        return valid
 
 
 class UpdateExpense(UpdateView):
@@ -211,6 +253,16 @@ class TransactionAutocomplete(autocomplete.Select2QuerySetView):
                 offset = payperiod.start_date - timedelta(days=15)
 
             queryset = queryset.filter(date_posted__gt=offset).filter(date_posted__lt=payperiod.start_date)
+
+        return queryset
+
+class PayPeriodAutocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        queryset = PayPeriod.objects.annotate(start_date_as_string=Cast('start_date',
+                                                                        output_field=CharField()))
+
+        if self.q:
+            queryset = queryset.filter(start_date_as_string__icontains=self.q)
 
         return queryset
 

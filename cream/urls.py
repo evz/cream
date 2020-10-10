@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path
 
-from cash.views import IndexView, PayPeriodDetail, CreateExpense, UpdateExpense, ReconcileTransactions, TransactionDetail, PayPeriodCreate, PayPeriodCreateFromTransaction, PayPeriodUpdate, UploadCSVView, TransactionAutocomplete, PaycheckAutocomplete
+from cash.views import IndexView, PayPeriodDetail, CreateExpense, UpdateExpense, ReconcileTransactions, TransactionDetail, PayPeriodCreate, PayPeriodCreateFromTransaction, PayPeriodUpdate, UploadCSVView, TransactionAutocomplete, PaycheckAutocomplete, PayPeriodAutocomplete
 
 
 urlpatterns = [
@@ -18,4 +18,5 @@ urlpatterns = [
     path('transaction/<str:pk>/', TransactionDetail.as_view(), name='transaction-detail'),
     path('transaction-autocomplete/', TransactionAutocomplete.as_view(), name='transaction-autocomplete'),
     path('paycheck-autocomplete/', PaycheckAutocomplete.as_view(), name='paycheck-autocomplete'),
+    path('payperiod-autocomplete/', PayPeriodAutocomplete.as_view(), name='payperiod-autocomplete'),
 ]

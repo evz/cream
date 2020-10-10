@@ -16,6 +16,7 @@
             <tr>
                 <th>Description</th>
                 <th>Amount</th>
+                <th>Recurrence</th>
                 <th></th>
             </tr>
         </thead>
@@ -30,6 +31,17 @@
                         {% if expense.transaction %}
                             <br />
                             Actual: {{ expense.transaction.amount|format_money }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if expense.recurrences %}
+                            {% for rule in expense.recurrences.rrules %}
+                                {{ rule.to_text }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                            <br />
+                            Starting:
+                        {% elif expense.budgeted_date %}
+                            {{ expense.budgeted_date }}
                         {% endif %}
                     </td>
                     <td>
