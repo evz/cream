@@ -112,24 +112,39 @@ class IncomeCreateFromTransaction(IncomeCreateBase):
 
 
 class IncomeCreate(IncomeCreateBase):
+    def form_invalid(self, form):
+        import pdb
+        pdb.set_trace()
+
     def form_valid(self, form):
         valid = super().form_valid(form)
 
-        if self.object.recurrences:
-            start_dt = datetime.combine(self.object.budgeted_date, datetime.min.time())
-            recurrences = self.object.recurrences.between((start_dt + timedelta(days=1)),
-                                                         (start_dt + timedelta(days=365)))
+        created = [self.object]
+        new_income = []
 
-            new_income = []
+        for recurrence in self.object.recurrences.occurrences()[1:]:
+            income = Income(budgeted_date=recurrence.date(),
+                            budgeted=self.object.budgeted,
+                            slug=recurrence.date().isoformat()[:10],
+                            first_occurrence=self.object)
+            new_income.append(income)
 
-            for recurrence in recurrences:
-                income = Income(budgeted_date=recurrence.date(),
-                                budgeted_income=self.object.budgeted_income,
-                                slug=recurrence.date().isoformat()[:10],
-                                first_occurrence=self.object)
-                new_income.append(income)
+        if new_income:
+            created.extend(Income.objects.bulk_create(new_income))
 
-            Income.objects.bulk_create(new_income)
+        for income in created:
+            expenses = Expense.objects.filter(budgeted_date__gte=income.budgeted_date)
+            if income.next_income:
+                expenses = expenses.filter(budgeted_date__lt=income.next_income.budgeted_date)
+
+            for expense in expenses:
+                expense.income = None
+
+            Expense.objects.bulk_update(expenses, ['income'])
+
+            income.expense_set.add(*expenses)
+
+        self.object.save()
 
         return valid
 

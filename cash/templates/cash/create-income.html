@@ -3,9 +3,9 @@
 
 {% block title %}
 {% if transaction %}
-Create a new Pay Period from Transaction - {{ transaction.date_posted|date:"F j, Y" }} {{ transaction.amount|format_money }}
+Create a new income source from Transaction - {{ transaction.date_posted|date:"F j, Y" }} {{ transaction.amount|format_money }}
 {% else %}
-Create a new expense
+Create a new income source
 {% endif %}
 {% endblock %}
 
@@ -19,9 +19,9 @@ Create a new expense
       <div class="cell">
         <h1>
           {% if transaction %}
-            New Pay Period <small>{{ transaction.date_posted|date:"F j, Y" }} {{ transaction.amount|format_money }}</small>
+            New income <small>{{ transaction.date_posted|date:"F j, Y" }} {{ transaction.amount|format_money }}</small>
           {% else %}
-            Create a new Pay Period
+            Create a new income source
           {% endif %}
         </h1>
       </div>
@@ -58,16 +58,9 @@ Create a new expense
                   <div class="cell small-1">
                     {{ form.budgeted.label_tag }}
                   </div>
-                  <div class="cell small-5">
+                  <div class="cell small-11">
                     {{ form.budgeted }}
                     {{ form.budgeted.errors }}
-                  </div>
-                  <div class="cell small-1">
-                    {{ form.budgeted_date.label_tag }}
-                  </div>
-                  <div class="cell small-5">
-                    {{ form.budgeted_date }}
-                    {{ form.budgeted_date.errors }}
                   </div>
                   <div class="cell small-1">
                     {{ form.transaction.label_tag }}
@@ -80,13 +73,17 @@ Create a new expense
                     {{ form.recurrences.label_tag }}
                   </div>
                   <div class="cell small-11">
-                    {{ form.recurrences }}
-                    {{ form.recurrences.errors }}
+                        <div class="cell">
+                            {{ form.recurrences }}
+                        </div>
+                        <div class="cell">
+                            {{ form.recurrences.errors }}
+                        </div>
                   </div>
                 {% else %}
-                {{ form.budgeted.as_hidden }}
-                {{ form.budgeted_date.as_hidden }}
-                {{ form.transaction.as_hidden }}
+                    {{ form.budgeted.as_hidden }}
+                    {{ form.budgeted_date.as_hidden }}
+                    {{ form.transaction.as_hidden }}
                 {% endif %}
                 <div class="cell">
                   <input type="submit" class="button" value="Save?" />
@@ -108,8 +105,7 @@ Create a new expense
                 ajax: {
                     url: '{% url "paycheck-autocomplete" %}',
                     dataType: 'json'
-                },
-                multiple: true
+                }
             })
         })
     </script>

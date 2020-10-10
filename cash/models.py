@@ -14,7 +14,7 @@ from recurrence.fields import RecurrenceField
 
 class Income(models.Model):
     budgeted = models.FloatField()
-    budgeted_date = models.DateField(unique=True)
+    budgeted_date = models.DateField()
     transaction = models.ForeignKey("Transaction",
                                     on_delete=models.CASCADE,
                                     null=True,
@@ -46,14 +46,14 @@ class Income(models.Model):
     @property
     def previous_income(self):
         try:
-            return self.get_previous_by_start_date()
+            return self.get_previous_by_budgeted_date()
         except Income.DoesNotExist:
             return None
 
     @property
     def next_income(self):
         try:
-            return self.get_next_by_start_date()
+            return self.get_next_by_budgeted_date()
         except Income.DoesNotExist:
             return None
 
@@ -70,7 +70,7 @@ class Income(models.Model):
     @property
     def total_expenses(self):
 
-        expression = Sum(Coalesce(Abs('transaction__amount'), 'budgeted'))
+        expression = Sum(Coalesce(Abs('transaction__amount'), 'budgeted_amount'))
 
         total_expenses = Expense.objects.filter(income=self)\
                                         .aggregate(total_expenses=expression)
@@ -82,11 +82,11 @@ class Income(models.Model):
 
     def expense_date_range(self):
         if self.next_income:
-            end_date = (self.next_income.start_date - timedelta(days=1)).date()
+            end_date = (self.next_income.budgeted_date - timedelta(days=1)).date()
         else:
-            end_date = (self.start_date + timedelta(days=14)).date()
+            end_date = (self.budgeted_date + timedelta(days=14)).date()
 
-        return self.start_date, end_date
+        return self.budgeted_date, end_date
 
     def save(self, **kwargs):
         self.slug = str(self)

@@ -5,7 +5,6 @@
 
 {% block content %}
     <h1>
-        Pay period start date: {{ income.budgeted_date|date:"F j, Y" }}<br />
         <span class="label warning">Income: <strong>{{ income.budgeted|format_money }}</strong></span>
         <span class="label warning">Carry over: <strong>{{ income.carry_over|format_money }}</strong></span>
         <span class="label warning">Total expenses: <strong>{{ income.total_expenses|format_money }}</strong></span>
