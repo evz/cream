@@ -9,6 +9,9 @@ from .models import Expense, Income, Transaction
 
 
 class ExpenseForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['recurrences'].required = True
 
     class Meta:
         model = Expense
