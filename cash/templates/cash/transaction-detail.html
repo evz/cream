@@ -36,9 +36,9 @@
         <div class="stacked button-group">
           <a class="button" href="{% url 'create-expense' %}?transaction_id={{ transaction.transaction_id }}">New expense</a>
 					<a class="button">Existing expense</a>
-					<a class="button" href="{% url 'create-payperiod-from-transaction' transaction.transaction_id %}?next=incoming-transactions">Paycheck</a>
+					<a class="button" href="{% url 'create-income-from-transaction' transaction.transaction_id %}?next=incoming-transactions">Paycheck</a>
 					<a class="button">Transfer</a>
-			  </div> 
+			  </div>
       </div>
     </div>
 {% endblock %}

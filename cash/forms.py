@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 
 from dal import autocomplete
 
-from .models import Expense, PayPeriod, Transaction
+from .models import Expense, Income, Transaction
 
 
 class ExpenseForm(ModelForm):
@@ -13,16 +13,12 @@ class ExpenseForm(ModelForm):
         fields = '__all__'
 
 
-class PayPeriodForm(ModelForm):
+class IncomeForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['paychecks'].required = False
-        self.fields['paychecks'].queryset = Transaction.maybe_paychecks().filter(payperiod__isnull=True)
+        self.fields['transaction'].required = False
+        self.fields['transaction'].queryset = Transaction.maybe_paychecks().filter(income__isnull=True)
 
     class Meta:
-        model = PayPeriod
+        model = Income
         fields = '__all__'
-
-    def clean(self):
-        import pdb
-        pdb.set_trace()

@@ -11,7 +11,7 @@ from ofxtools.Parser import OFXTree
 
 from cream.celery import app
 
-from .models import Transaction, FinancialInstitution, PayPeriod, Expense, Account
+from .models import Transaction, FinancialInstitution, Income, Expense, Account
 
 
 class TransactionMachine(object):
@@ -75,18 +75,6 @@ def update_transactions():
 
 
 @app.task
-def backfill_payperiods():
-    paychecks = Transaction.maybe_paychecks()
-    payperiods = []
-    for date_posted, paychecks in itertools.groupby(paychecks, key=lambda x: x.date_posted):
-        paychecks = list(paychecks)
-        payperiod = PayPeriod(budgeted_income=0,
-                              start_date=date_posted)
-        payperiod.save()
-        payperiod.transactions.set(paychecks, clear=True)
-
-
-@app.task
 def backfill_expenses():
     atm = Q(transaction_type='ATM')
     check = Q(transaction_type='CHECK')
@@ -95,9 +83,9 @@ def backfill_expenses():
 
     expenses = []
     for transaction in Transaction.objects.filter(atm | check | debit | pos).filter(date_posted__gte='2020-01-03'):
-        payperiod = PayPeriod.objects.filter(start_date__lte=transaction.date_posted).latest('start_date')
+        income = Income.objects.filter(budgeted_date__lte=transaction.date_posted).latest('budgeted_date')
         expense = Expense(budgeted_amount=abs(transaction.amount),
-                          payperiod=payperiod,
+                          income=income,
                           description=transaction.memo,
                           transaction=transaction)
         expenses.append(expense)

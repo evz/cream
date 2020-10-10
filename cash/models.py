@@ -12,46 +12,49 @@ from ofxtools.Parser import OFXTree
 from recurrence.fields import RecurrenceField
 
 
-class PayPeriod(models.Model):
-    budgeted_income = models.FloatField()
-    start_date = models.DateField(unique=True)
-    paychecks = models.ManyToManyField("Transaction")
+class Income(models.Model):
+    budgeted = models.FloatField()
+    budgeted_date = models.DateField(unique=True)
+    transaction = models.ForeignKey("Transaction",
+                                    on_delete=models.CASCADE,
+                                    null=True,
+                                    blank=True)
     slug = models.SlugField(null=True, blank=True)
     recurrences = RecurrenceField(null=True, blank=True)
-    top_payperiod = models.ForeignKey("self",
-                                      null=True,
-                                      blank=True,
-                                      on_delete=models.PROTECT)
+    first_occurrence = models.ForeignKey("self",
+                                         null=True,
+                                         blank=True,
+                                         on_delete=models.PROTECT)
     _carry_over = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         try:
-            return self.start_date.isoformat()[:10]
+            return self.budgeted_date.isoformat()[:10]
         except AttributeError:
-            return self.start_date
+            return self.budgeted_date
 
     @property
     def income(self):
 
-        income = Transaction.objects.filter(payperiod=self).aggregate(Sum('amount'))
+        income = Transaction.objects.filter(income=self).aggregate(Sum('amount'))
 
         if income['amount__sum']:
             return income['amount__sum']
         else:
-            return self.budgeted_income
+            return self.budgeted
 
     @property
-    def previous_payperiod(self):
+    def previous_income(self):
         try:
             return self.get_previous_by_start_date()
-        except PayPeriod.DoesNotExist:
+        except Income.DoesNotExist:
             return None
 
     @property
-    def next_payperiod(self):
+    def next_income(self):
         try:
             return self.get_next_by_start_date()
-        except PayPeriod.DoesNotExist:
+        except Income.DoesNotExist:
             return None
 
     @property
@@ -59,17 +62,17 @@ class PayPeriod(models.Model):
         if self._carry_over:
             return self._carry_over
 
-        if self.previous_payperiod:
-            return (self.previous_payperiod.income - abs(self.previous_payperiod.total_expenses)) + self.previous_payperiod.carry_over
+        if self.previous_income:
+            return (self.previous_income.income - abs(self.previous_income.total_expenses)) + self.previous_income.carry_over
         else:
             return 0
 
     @property
     def total_expenses(self):
 
-        expression = Sum(Coalesce(Abs('transaction__amount'), 'budgeted_amount'))
+        expression = Sum(Coalesce(Abs('transaction__amount'), 'budgeted'))
 
-        total_expenses = Expense.objects.filter(payperiod=self)\
+        total_expenses = Expense.objects.filter(income=self)\
                                         .aggregate(total_expenses=expression)
 
         if total_expenses['total_expenses']:
@@ -78,8 +81,8 @@ class PayPeriod(models.Model):
         return 0
 
     def expense_date_range(self):
-        if self.next_payperiod:
-            end_date = (self.next_payperiod.start_date - timedelta(days=1)).date()
+        if self.next_income:
+            end_date = (self.next_income.start_date - timedelta(days=1)).date()
         else:
             end_date = (self.start_date + timedelta(days=14)).date()
 
@@ -93,10 +96,10 @@ class PayPeriod(models.Model):
 class Expense(models.Model):
     budgeted_amount = models.FloatField()
     budgeted_date = models.DateField(null=True, blank=True)
-    payperiod = models.ForeignKey(PayPeriod,
-                                  on_delete=models.SET_NULL,
-                                  null=True,
-                                  blank=True)
+    income = models.ForeignKey(Income,
+                               on_delete=models.SET_NULL,
+                               null=True,
+                               blank=True)
     description = models.CharField(max_length=1000)
     top_expense = models.ForeignKey("self",
                                     null=True,
@@ -106,7 +109,7 @@ class Expense(models.Model):
 
     def __str__(self):
         transactions = self.transaction_set.all()
-        args = [self.description, self.payperiod]
+        args = [self.description, self.income]
 
         if transactions:
             total_amount = sum(t.amount for t in transactions)

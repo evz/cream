@@ -22,11 +22,11 @@ Update expense
             <div class="grid-x grid-padding-x">
                 {% csrf_token %}
                 <div class="cell small-1">
-                  <label for="id_payperiod" class="text-right">Pay Period:</label>
+                  <label for="id_income" class="text-right">Pay Period:</label>
                 </div>
                 <div class="cell small-5">
-                  {{ form.payperiod }}
-                  {{ form.payperiod.errors }}
+                  {{ form.income }}
+                  {{ form.income.errors }}
                 </div>
                 <div class="cell small-1">
                   <label for="id_budgeted_amount" class="text-right">Budgeted amount:</label>
@@ -75,7 +75,7 @@ Update expense
     {{ form.media.js }}
     <script type="text/javascript">
         django.jQuery(document).ready(function() {
-            django.jQuery('#id_payperiod').select2({
+            django.jQuery('#id_income').select2({
                 ajax: {
                     url: '{% url "paycheck-autocomplete" %}',
                     dataType: 'json'
@@ -83,7 +83,7 @@ Update expense
             })
             django.jQuery('#id_transactions').select2({
                 ajax: {
-                    url: '{% url "transaction-autocomplete" %}?payperiod_date=',
+                    url: '{% url "transaction-autocomplete" %}?income_date={{ form.initial.income }}',
                     dataType: 'json'
                 }
             })

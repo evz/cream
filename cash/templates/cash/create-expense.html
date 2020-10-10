@@ -53,8 +53,8 @@ Create a new expense
           <div class="grid-container">
             <div class="grid-x grid-padding-x">
                 {% csrf_token %}
-                {% if request.GET.payperiod_date %}
-                    <input type="hidden" value="{{ request.GET.payperiod_date }}">
+                {% if request.GET.income_date %}
+                    <input type="hidden" value="{{ request.GET.income_date }}">
                 {% endif %}
                 {% if not transaction %}
                 <div class="cell small-1">

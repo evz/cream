@@ -1,11 +1,11 @@
 from django.contrib import admin
 
-from .models import PayPeriod, Expense, FinancialInstitution, Account
+from .models import Income, Expense, FinancialInstitution, Account
 
-@admin.register(PayPeriod)
-class PayPeriodAdmin(admin.ModelAdmin):
+@admin.register(Income)
+class IncomeAdmin(admin.ModelAdmin):
     list_display = [
-        'start_date',
+        'budgeted_date',
         'formatted_income',
         'formatted_carry_over',
         'formatted_total_expenses'
@@ -43,8 +43,8 @@ duplicate_expense.short_description = 'Duplicate selected expense'
 
 @admin.register(Expense)
 class ExpenseAdmin(admin.ModelAdmin):
-    list_display = ['payperiod', 'description','formatted_budgeted', 'formatted_actual']
-    list_filter = ['payperiod']
+    list_display = ['income', 'description','formatted_budgeted', 'formatted_actual']
+    list_filter = ['income']
     actions = [duplicate_expense]
 
     def formatted_actual(self, obj):

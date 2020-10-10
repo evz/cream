@@ -56,25 +56,25 @@ Create a new expense
                 {% csrf_token %}
                 {% if not transaction %}
                   <div class="cell small-1">
-                    {{ form.budgeted_income.label_tag }}
+                    {{ form.budgeted.label_tag }}
                   </div>
                   <div class="cell small-5">
-                    {{ form.budgeted_income }}
-                    {{ form.budgeted_income.errors }}
+                    {{ form.budgeted }}
+                    {{ form.budgeted.errors }}
                   </div>
                   <div class="cell small-1">
-                    {{ form.start_date.label_tag }}
+                    {{ form.budgeted_date.label_tag }}
                   </div>
                   <div class="cell small-5">
-                    {{ form.start_date }}
-                    {{ form.start_date.errors }}
+                    {{ form.budgeted_date }}
+                    {{ form.budgeted_date.errors }}
                   </div>
                   <div class="cell small-1">
-                    {{ form.paychecks.label_tag }}
+                    {{ form.transaction.label_tag }}
                   </div>
                   <div class="cell small-11">
-                    {{ form.paychecks }}
-                    {{ form.paychecks.errors }}
+                    {{ form.transaction }}
+                    {{ form.transaction.errors }}
                   </div>
                   <div class="cell small-1">
                     {{ form.recurrences.label_tag }}
@@ -84,9 +84,9 @@ Create a new expense
                     {{ form.recurrences.errors }}
                   </div>
                 {% else %}
-                {{ form.budgeted_income.as_hidden }}
-                {{ form.start_date.as_hidden }}
-                {{ form.paychecks.as_hidden }}
+                {{ form.budgeted.as_hidden }}
+                {{ form.budgeted_date.as_hidden }}
+                {{ form.transaction.as_hidden }}
                 {% endif %}
                 <div class="cell">
                   <input type="submit" class="button" value="Save?" />
@@ -104,7 +104,7 @@ Create a new expense
     {{ form.media.js }}
     <script type="text/javascript">
         django.jQuery(document).ready(function() {
-            django.jQuery('#id_paychecks').select2({
+            django.jQuery('#id_transaction').select2({
                 ajax: {
                     url: '{% url "paycheck-autocomplete" %}',
                     dataType: 'json'

@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 {% load formatting %}
 
-{% block title %}payperiod of {{ payperiod.start_date|date:"F j, Y" }}{% endblock %}
+{% block title %}Income of {{ income.budgeted_date|date:"F j, Y" }}{% endblock %}
 
 {% block content %}
     <h1>
-        Pay period start date: {{ payperiod.start_date|date:"F j, Y" }}<br />
-        <span class="label warning">Income: <strong>{{ payperiod.income|format_money }}</strong></span>
-        <span class="label warning">Carry over: <strong>{{ payperiod.carry_over|format_money }}</strong></span>
-        <span class="label warning">Total expenses: <strong>{{ payperiod.total_expenses|format_money }}</strong></span>
+        Pay period start date: {{ income.budgeted_date|date:"F j, Y" }}<br />
+        <span class="label warning">Income: <strong>{{ income.budgeted|format_money }}</strong></span>
+        <span class="label warning">Carry over: <strong>{{ income.carry_over|format_money }}</strong></span>
+        <span class="label warning">Total expenses: <strong>{{ income.total_expenses|format_money }}</strong></span>
     </h1>
 
     <table>
@@ -21,7 +21,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for expense in payperiod.expense_set.all %}
+            {% for expense in income.expense_set.all %}
                 <tr>
                     <td>
                         {{ expense.description }}
@@ -60,7 +60,7 @@
         </tbody>
     </table>
     <div class="cell">
-        <a class="button" href="{% url 'create-expense' %}?payperiod_date={{ payperiod }}">
+        <a class="button" href="{% url 'create-expense' %}?income_date={{ payperiod }}">
             Add new expense
         </a>
     </div>
