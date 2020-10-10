@@ -1,4 +1,3 @@
 # C.R.E.A.M.
 
-Cash rules everything around me: An exercise in figuring out my wife's budget
-spreadsheet.
+![CREAM](https://media.giphy.com/media/EvmFsZM7XanHW/source.gif)
