@@ -18,6 +18,10 @@ class PayPeriod(models.Model):
     paychecks = models.ManyToManyField("Transaction")
     slug = models.SlugField(null=True, blank=True)
     recurrences = RecurrenceField(null=True, blank=True)
+    top_payperiod = models.ForeignKey("self",
+                                      null=True,
+                                      blank=True,
+                                      on_delete=models.PROTECT)
     _carry_over = models.FloatField(null=True, blank=True)
 
     def __str__(self):
@@ -88,12 +92,16 @@ class PayPeriod(models.Model):
 
 class Expense(models.Model):
     budgeted_amount = models.FloatField()
-    budgeted_date = models.DateField(null=True)
+    budgeted_date = models.DateField(null=True, blank=True)
     payperiod = models.ForeignKey(PayPeriod,
                                   on_delete=models.SET_NULL,
                                   null=True,
                                   blank=True)
     description = models.CharField(max_length=1000)
+    top_expense = models.ForeignKey("self",
+                                    null=True,
+                                    blank=True,
+                                    on_delete=models.PROTECT)
     recurrences = RecurrenceField(null=True, blank=True)
 
     def __str__(self):

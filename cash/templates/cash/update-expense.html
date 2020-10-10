@@ -36,11 +36,14 @@ Update expense
                   {{ form.budgeted_amount.errors }}
                 </div>
                 <div class="cell small-1">
-                  <label for="id_transaction" class="text-right middle">Transaction:</label>
+                  <label for="id_transactions" class="text-right middle">Transactions:</label>
                 </div>
                 <div class="cell small-11">
-                    {{ form.transaction }}
-                    {{ form.transaction.errors }}
+                    <select id="id_transactions" name="transactions" multiple>
+                        {% for transaction in object.transaction_set.all %}
+                            <option value="{{ transaction.transaction_id }}" selected>{{ transaction }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="cell small-1">
                   <label for="id_description" class="text-right middle">Description:</label>
@@ -48,6 +51,13 @@ Update expense
                 <div class="cell small-11">
                   {{ form.description }}
                   {{ form.description.errors }}
+                </div>
+                <div class="cell small-1">
+                    {{ form.recurrences.label_tag }}
+                </div>
+                <div class="cell small-11">
+                    {{ form.recurrences }}
+                    {{ form.recurrences.errors }}
                 </div>
                 <div class="cell">
                   <input type="submit" class="button" value="Save?" />
@@ -71,9 +81,9 @@ Update expense
                     dataType: 'json'
                 }
             })
-            django.jQuery('#id_transaction').select2({
+            django.jQuery('#id_transactions').select2({
                 ajax: {
-                    url: '{% url "transaction-autocomplete" %}',
+                    url: '{% url "transaction-autocomplete" %}?payperiod_date=',
                     dataType: 'json'
                 }
             })

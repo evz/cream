@@ -53,16 +53,16 @@ Create a new expense
           <div class="grid-container">
             <div class="grid-x grid-padding-x">
                 {% csrf_token %}
+                {% if request.GET.payperiod_date %}
+                    <input type="hidden" value="{{ request.GET.payperiod_date }}">
+                {% endif %}
                 {% if not transaction %}
-                <div class="cell small-6">
-                    {{ form.budgeted_amount.label_tag }}
+                <div class="cell small-1">
+                    <label for="id_budgeted_amount" class="text-right">Budgeted amount:</label>
+                </div>
+                <div class="cell small-11">
                     {{ form.budgeted_amount }}
                     {{ form.budgeted_amount.errors }}
-                </div>
-                <div class="cell small-6">
-                    {{ form.budgeted_date.label_tag }}
-                    {{ form.budgeted_date }}
-                    {{ form.budgeted_date.errors }}
                 </div>
                 <div class="cell small-1">
                     <label for="id_transactions" class="text-right">Transactions:</label>

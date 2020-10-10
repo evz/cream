@@ -126,6 +126,11 @@ class PayPeriodCreate(PayPeriodCreateBase):
 
         return form
 
+    def form_invalid(self, form):
+        import pdb
+        pdb.set_trace()
+        return super().form_invalid(form)
+
     def form_valid(self, form):
         valid = super().form_valid(form)
 
@@ -139,7 +144,8 @@ class PayPeriodCreate(PayPeriodCreateBase):
             for recurrence in recurrences:
                 payperiod = PayPeriod(start_date=recurrence.date(),
                                       budgeted_income=self.object.budgeted_income,
-                                      slug=recurrence.date().isoformat()[:10])
+                                      slug=recurrence.date().isoformat()[:10],
+                                      top_payperiod=self.object)
                 new_payperiods.append(payperiod)
 
             PayPeriod.objects.bulk_create(new_payperiods)
@@ -181,30 +187,39 @@ class CreateExpense(CreateView):
     def form_valid(self, form):
         valid = super().form_valid(form)
 
-        if self.object.recurrences:
-            start_dt = datetime.combine(self.object.budgeted_date, datetime.min.time())
-            recurrences = self.object.recurrences.between((start_dt + timedelta(days=1)),
-                                                         (start_dt + timedelta(days=365)))
+        if self.request.GET.get('payperiod_date'):
+            payperiod_date = datetime.strftime(self.request.GET['payperiod_date'],
+                                               "%Y-%m-%d")
+            start_dt = datetime.combine(payperiod_date, datetime.min.time())
+        else:
+            start_dt = datetime.combine(datetime.now().date(), datetime.min.time())
 
-            new_expenses = []
+        recurrences = self.object.recurrences.between((start_dt + timedelta(days=1)),
+                                                     (start_dt + timedelta(days=365)))
 
-            for recurrence in recurrences:
-                payperiod = PayPeriod.objects.filter(start_date__lte=recurrence.date()).order_by('-start_date').first()
-                expense = Expense(budgeted_date=recurrence.date(),
-                                  budgeted_amount=self.object.budgeted_amount,
-                                  description=self.object.description,
-                                  payperiod=payperiod)
-                new_expenses.append(expense)
+        self.object.budgeted_date = recurrences[0].date()
 
-            Expense.objects.bulk_create(new_expenses)
+        new_expenses = []
+
+        for recurrence in recurrences[1:]:
+            payperiod = PayPeriod.objects.filter(start_date__lte=recurrence.date()).order_by('-start_date').first()
+            expense = Expense(budgeted_date=recurrence.date(),
+                              budgeted_amount=self.object.budgeted_amount,
+                              description=self.object.description,
+                              payperiod=payperiod,
+                              top_expense=self.object)
+            new_expenses.append(expense)
+
+        Expense.objects.bulk_create(new_expenses)
 
         payperiod = PayPeriod.objects.filter(start_date__lte=self.object.budgeted_date).order_by('-start_date').first()
 
         if payperiod:
             self.object.payperiod = payperiod
-            self.object.save()
 
             self.success_url = reverse('payperiod-detail', kwargs={'slug': self.object.payperiod.slug})
+
+        self.object.save()
 
         return valid
 
@@ -269,9 +284,12 @@ class PayPeriodAutocomplete(autocomplete.Select2QuerySetView):
 
 class PaycheckAutocomplete(autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        queryset = Transaction.maybe_paychecks().filter(payperiod__isnull=True)
+        queryset = Transaction.maybe_paychecks()\
+                              .filter(payperiod__isnull=True)\
+                              .annotate(date_posted_as_string=Cast('date_posted',
+                                        output_field=CharField()))
 
         if self.q:
-            queryset = queryset.filter(memo__icontains=self.q)
+            queryset = queryset.filter(date_posted_as_string__icontains=self.q)
 
         return queryset
