@@ -6,7 +6,6 @@ Update expense
 {% endblock %}
 {% block extra_css %}
     {{ form.media.css }}
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
@@ -20,14 +19,11 @@ Update expense
         <form method="POST" action="{% url 'update-expense' object.id %}">
           <div class="grid-container">
             <div class="grid-x grid-padding-x">
+                {{ form.transaction.as_hidden }}
+                {{ form.income.as_hidden }}
+                {{ form.first_occurrence.as_hidden }}
+                {{ form.budgeted_date.as_hidden }}
                 {% csrf_token %}
-                <div class="cell small-1">
-                  <label for="id_income" class="text-right">Pay Period:</label>
-                </div>
-                <div class="cell small-5">
-                  {{ form.income }}
-                  {{ form.income.errors }}
-                </div>
                 <div class="cell small-1">
                   <label for="id_budgeted_amount" class="text-right">Budgeted amount:</label>
                 </div>
@@ -36,17 +32,14 @@ Update expense
                   {{ form.budgeted_amount.errors }}
                 </div>
                 <div class="cell small-1">
-                  <label for="id_transactions" class="text-right middle">Transactions:</label>
+                    <label for="id_budgeted_date">Start date:</label>
                 </div>
-                <div class="cell small-11">
-                    <select id="id_transactions" name="transactions" multiple>
-                        {% for transaction in object.transaction_set.all %}
-                            <option value="{{ transaction.transaction_id }}" selected>{{ transaction }}</option>
-                        {% endfor %}
-                    </select>
+                <div class="cell small-5">
+                  {{ form.budgeted_date }}
+                  {{ form.budgeted_date.errors }}
                 </div>
                 <div class="cell small-1">
-                  <label for="id_description" class="text-right middle">Description:</label>
+                    {{ form.description.label_tag }}
                 </div>
                 <div class="cell small-11">
                   {{ form.description }}
@@ -59,6 +52,13 @@ Update expense
                     {{ form.recurrences }}
                     {{ form.recurrences.errors }}
                 </div>
+                {% if object.first_occurrence.recurrences.count > 1 %}
+                    <fieldset class="cell small-11 small-offset-1">
+                        <legend>Update all occurrences after this one?</legend>
+                        <input type="radio" id="id_yes" name="update_all" value="Yes" checked><label for="id_yes">Yes</label>
+                        <input type="radio" id="id_no" name="update_all" value="No"><label for="id_no">No. Only update this occurrence</label>
+                    </fieldset>
+                {% endif %}
                 <div class="cell">
                   <input type="submit" class="button" value="Save?" />
                 </div>
@@ -69,24 +69,7 @@ Update expense
     </div>
 {% endblock %}
 {% block extra_js %}
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
     <script type="text/javascript" src="/admin/jsi18n/">
     <script type="text/javascript" src="/static/admin/js/core.js">
     {{ form.media.js }}
-    <script type="text/javascript">
-        django.jQuery(document).ready(function() {
-            django.jQuery('#id_income').select2({
-                ajax: {
-                    url: '{% url "paycheck-autocomplete" %}',
-                    dataType: 'json'
-                }
-            })
-            django.jQuery('#id_transactions').select2({
-                ajax: {
-                    url: '{% url "transaction-autocomplete" %}?income_date={{ form.initial.income }}',
-                    dataType: 'json'
-                }
-            })
-        })
-    </script>
 {% endblock %}

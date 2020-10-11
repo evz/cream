@@ -35,12 +35,12 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if expense.top_expense %}
-                            {% for rule in expense.top_expense.recurrences.rrules %}
+                        {% if expense.first_occurrence %}
+                            {% for rule in expense.first_occurrence.recurrences.rrules %}
                                 {{ rule.to_text }}{% if not forloop.last %}, {% endif %}
                             {% endfor %}
                             <br />
-                            Starting: {{ expense.top_expense.budgeted_date|date:"F j, Y" }}
+                            Starting: {{ expense.first_occurrence.budgeted_date|date:"F j, Y" }}
                         {% elif expense.recurrences %}
                             {% for rule in expense.recurrences.rrules %}
                                 {{ rule.to_text }}{% if not forloop.last %}, {% endif %}

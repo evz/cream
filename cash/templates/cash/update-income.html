@@ -21,6 +21,7 @@ Update income source {{ object.start_date|date:"F j, Y" }} {{ object.income|form
             <div class="grid-x grid-padding-x">
                 {% csrf_token %}
                 {{ form.first_occurrence.as_hidden }}
+                {{ form.transaction.as_hidden }}
                 <div class="cell small-1">
                   {{ form.budgeted.label_tag }}
                 </div>
@@ -29,18 +30,11 @@ Update income source {{ object.start_date|date:"F j, Y" }} {{ object.income|form
                   {{ form.budgeted.errors }}
                 </div>
                 <div class="cell small-1">
-                  {{ form.budgeted_date.label_tag }}
+                    <label for="id_budgeted_date">Start date:</label>
                 </div>
                 <div class="cell small-5">
                   {{ form.budgeted_date }}
                   {{ form.budgeted_date.errors }}
-                </div>
-                <div class="cell small-1">
-                  {{ form.transaction.label_tag }}
-                </div>
-                <div class="cell small-11">
-                  {{ form.transaction }}
-                  {{ form.transaction.errors }}
                 </div>
                 <div class="cell small-1">
                     {{ form.recurrences.label_tag }}

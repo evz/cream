@@ -20,7 +20,7 @@ class Income(models.Model):
                                     null=True,
                                     blank=True)
     slug = models.SlugField(null=True, blank=True)
-    recurrences = RecurrenceField(null=True, blank=True)
+    recurrences = RecurrenceField(null=True, blank=True, include_dtstart=False)
     first_occurrence = models.ForeignKey("self",
                                          null=True,
                                          blank=True,
@@ -105,7 +105,7 @@ class Expense(models.Model):
                                          null=True,
                                          blank=True,
                                          on_delete=models.PROTECT)
-    recurrences = RecurrenceField(null=True, blank=True)
+    recurrences = RecurrenceField(null=True, blank=True, include_dtstart=False)
     transaction = models.ForeignKey("Transaction",
                                     null=True,
                                     blank=True,

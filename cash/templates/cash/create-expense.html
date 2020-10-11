@@ -59,9 +59,16 @@ Create a new expense
                 <div class="cell small-1">
                     <label for="id_budgeted_amount" class="text-right">Budgeted amount:</label>
                 </div>
-                <div class="cell small-11">
+                <div class="cell small-5">
                     {{ form.budgeted_amount }}
                     {{ form.budgeted_amount.errors }}
+                </div>
+                <div class="cell small-1">
+                    <label for="id_budgeted_date" class="text-right">Start date:</label>
+                </div>
+                <div class="cell small-5">
+                    {{ form.budgeted_date }}
+                    {{ form.budgeted_date.errors }}
                 </div>
                 {% else %}
                     <input type="hidden" name="budgeted_amount" value="{{ transaction.amount|force_positive }}">
