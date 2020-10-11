@@ -4,12 +4,14 @@
 {% block title %}Income of {{ income.budgeted_date|date:"F j, Y" }}{% endblock %}
 
 {% block content %}
-    <h1>
+    <div class="cell">
+        <a class="success button" href="{% url 'update-income' income.id %}">
+            <i class="fi-edit"> </i> Edit income
+        </a>
         <span class="label warning">Income: <strong>{{ income.budgeted|format_money }}</strong></span>
         <span class="label warning">Carry over: <strong>{{ income.carry_over|format_money }}</strong></span>
         <span class="label warning">Total expenses: <strong>{{ income.total_expenses|format_money }}</strong></span>
-    </h1>
-
+    </div>
     <table>
         <thead>
             <tr>
@@ -58,9 +60,4 @@
             {% endfor%}
         </tbody>
     </table>
-    <div class="cell">
-        <a class="button" href="{% url 'create-expense' %}?income_date={{ payperiod }}">
-            Add new expense
-        </a>
-    </div>
 {% endblock %}

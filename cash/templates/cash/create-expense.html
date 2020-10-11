@@ -10,7 +10,6 @@ Create a new expense
 {% endblock %}
 {% block extra_css %}
     {{ form.media.css }}
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
@@ -64,16 +63,10 @@ Create a new expense
                     {{ form.budgeted_amount }}
                     {{ form.budgeted_amount.errors }}
                 </div>
-                <div class="cell small-1">
-                    <label for="id_transactions" class="text-right">Transactions:</label>
-                </div>
-                <div class="cell small-11">
-                    <select id="id_transactions" name="transactions" multiple></select>
-                </div>
                 {% else %}
                     <input type="hidden" name="budgeted_amount" value="{{ transaction.amount|force_positive }}">
-                    <input type="hidden" name="transactions" value="{{ transaction.transaction_id }}">
-                    <input type="hidden" name="budgeted_date" value="{{ transaction.date_posted }}">
+                    <input type="hidden" name="transaction" value="{{ transaction.transaction_id }}">
+                    <input type="hidden" name="budgeted_date" value="{{ transaction.date_posted|date:"Y-m-d" }}">
                 {% endif %}
                 <div class="cell small-1">
                     <label for="id_description" class="text-right middle">Description:</label>
@@ -99,19 +92,7 @@ Create a new expense
     </div>
 {% endblock %}
 {% block extra_js %}
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
     <script type="text/javascript" src="/admin/jsi18n/">
     <script type="text/javascript" src="/static/admin/js/core.js">
     {{ form.media.js }}
-    <script type="text/javascript">
-        django.jQuery(document).ready(function() {
-            django.jQuery('#id_transactions').select2({
-                ajax: {
-                    url: '{% url "transaction-autocomplete" %}',
-                    dataType: 'json'
-                },
-                multiple: true
-            })
-        })
-    </script>
 {% endblock %}

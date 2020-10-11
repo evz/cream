@@ -4,6 +4,12 @@
 {% block title %}Cash Rules Everything Around Me{% endblock %}
 
 {% block content %}
+    <div class="cell">
+        <a class="button" href="{% url 'create-expense' %}">
+            Add new expense
+        </a>
+        <a href="{% url 'create-income' %}" class="button">Create new income source</a>
+    </div>
     <table>
         <thead>
             <tr>
@@ -28,5 +34,4 @@
             {% endfor %}
         </tbody>
     </table>
-    <a href="{% url 'create-income' %}" class="button">Create new income source</a>
 {% endblock %}

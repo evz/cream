@@ -10,8 +10,7 @@ Create a new income source
 {% endblock %}
 
 {% block extra_css %}
-{{ form.media.css }}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
+    {{ form.media.css }}
 {% endblock %}
 
 {% block content %}
@@ -63,13 +62,6 @@ Create a new income source
                     {{ form.budgeted.errors }}
                   </div>
                   <div class="cell small-1">
-                    {{ form.transaction.label_tag }}
-                  </div>
-                  <div class="cell small-11">
-                    {{ form.transaction }}
-                    {{ form.transaction.errors }}
-                  </div>
-                  <div class="cell small-1">
                     {{ form.recurrences.label_tag }}
                   </div>
                   <div class="cell small-11">
@@ -95,18 +87,7 @@ Create a new income source
     </div>
 {% endblock %}
 {% block extra_js %}
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
     <script type="text/javascript" src="/admin/jsi18n/">
     <script type="text/javascript" src="/static/admin/js/core.js">
     {{ form.media.js }}
-    <script type="text/javascript">
-        django.jQuery(document).ready(function() {
-            django.jQuery('#id_transaction').select2({
-                ajax: {
-                    url: '{% url "paycheck-autocomplete" %}',
-                    dataType: 'json'
-                }
-            })
-        })
-    </script>
 {% endblock %}

@@ -8,17 +8,32 @@ from dal import autocomplete
 from .models import Expense, Income, Transaction
 
 
-class ExpenseForm(ModelForm):
+class RecurrenceValidationMixin(object):
+    def clean_recurrences(self):
+        recurrences = self.cleaned_data['recurrences']
+
+        for occurrence in recurrences.occurrences():
+            if occurrence > datetime.now() + timedelta(weeks=5200):
+                raise ValidationError('Please select an end date')
+
+        if self.cleaned_data['budgeted_date'] is None:
+            self.cleaned_data['budgeted_date'] = self.cleaned_data['recurrences'].occurrences()[0]
+
+        return recurrences
+
+
+class ExpenseForm(RecurrenceValidationMixin, ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['recurrences'].required = True
+        self.fields['budgeted_date'].required = False
 
     class Meta:
         model = Expense
         fields = '__all__'
 
 
-class IncomeForm(ModelForm):
+class IncomeForm(RecurrenceValidationMixin, ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['transaction'].required = False
@@ -29,16 +44,3 @@ class IncomeForm(ModelForm):
     class Meta:
         model = Income
         fields = '__all__'
-
-    def clean(self):
-        cleaned_data = super().clean()
-        self.cleaned_data['budgeted_date'] = cleaned_data['recurrences'].occurrences()[0]
-
-    def clean_recurrences(self):
-        recurrences = self.cleaned_data['recurrences']
-
-        for occurrence in recurrences.occurrences():
-            if occurrence > datetime.now() + timedelta(weeks=5200):
-                raise ValidationError('Please select an end date')
-
-        return recurrences

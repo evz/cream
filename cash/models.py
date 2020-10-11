@@ -101,19 +101,21 @@ class Expense(models.Model):
                                null=True,
                                blank=True)
     description = models.CharField(max_length=1000)
-    top_expense = models.ForeignKey("self",
+    first_occurrence = models.ForeignKey("self",
+                                         null=True,
+                                         blank=True,
+                                         on_delete=models.PROTECT)
+    recurrences = RecurrenceField(null=True, blank=True)
+    transaction = models.ForeignKey("Transaction",
                                     null=True,
                                     blank=True,
                                     on_delete=models.PROTECT)
-    recurrences = RecurrenceField(null=True, blank=True)
 
     def __str__(self):
-        transactions = self.transaction_set.all()
         args = [self.description, self.income]
 
-        if transactions:
-            total_amount = sum(t.amount for t in transactions)
-            args.append(total_amount)
+        if self.transaction:
+            args.append(abs(self.transaction.amout))
         else:
             args.append(self.budgeted_amount)
 
@@ -151,10 +153,6 @@ class Transaction(models.Model):
     check_number = models.IntegerField(null=True)
     transaction_type = models.CharField(max_length=11, choices=TRANSACTION_TYPES)
     account = models.ForeignKey("Account", on_delete=models.CASCADE)
-    expense = models.ForeignKey("Expense",
-                                null=True,
-                                blank=True,
-                                on_delete=models.PROTECT)
 
     def __str__(self):
         return '{} - {} - ${}'.format(self.name, self.date_posted.date().isoformat(), self.amount)

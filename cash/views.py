@@ -78,6 +78,41 @@ class IncomeCreateBase(CreateView):
         return '/'
 
 
+class UpdateRelatedExpensesMixin(object):
+    def update_related_expenses(self):
+        created = [self.object]
+        new_income = []
+
+        after_dt = datetime.combine(self.object.budgeted_date, datetime.max.time())
+        last_occurrence = self.object.recurrences.occurrences()[-1]
+        later_occurrences = self.object.recurrences.between(after_dt, last_occurrence)
+
+        if later_occurrences:
+            for recurrence in later_occurrences:
+                income = Income(budgeted_date=recurrence.date(),
+                                budgeted=self.object.budgeted,
+                                slug=recurrence.date().isoformat()[:10],
+                                first_occurrence=self.object)
+                new_income.append(income)
+
+        if new_income:
+            created.extend(Income.objects.bulk_create(new_income))
+
+        for income in created:
+            expenses = Expense.objects.filter(budgeted_date__gte=income.budgeted_date)
+            if income.next_income:
+                expenses = expenses.filter(budgeted_date__lt=income.next_income.budgeted_date)
+
+            for expense in expenses:
+                expense.income = None
+
+            Expense.objects.bulk_update(expenses, ['income'])
+
+            income.expense_set.add(*expenses)
+
+        self.object.save()
+
+
 class IncomeCreateFromTransaction(IncomeCreateBase):
 
     def get(self, request, *args, **kwargs):
@@ -111,44 +146,14 @@ class IncomeCreateFromTransaction(IncomeCreateBase):
         return context
 
 
-class IncomeCreate(IncomeCreateBase):
-    def form_invalid(self, form):
-        import pdb
-        pdb.set_trace()
-
+class IncomeCreate(UpdateRelatedExpensesMixin, IncomeCreateBase):
     def form_valid(self, form):
         valid = super().form_valid(form)
-
-        created = [self.object]
-        new_income = []
-
-        for recurrence in self.object.recurrences.occurrences()[1:]:
-            income = Income(budgeted_date=recurrence.date(),
-                            budgeted=self.object.budgeted,
-                            slug=recurrence.date().isoformat()[:10],
-                            first_occurrence=self.object)
-            new_income.append(income)
-
-        if new_income:
-            created.extend(Income.objects.bulk_create(new_income))
-
-        for income in created:
-            expenses = Expense.objects.filter(budgeted_date__gte=income.budgeted_date)
-            if income.next_income:
-                expenses = expenses.filter(budgeted_date__lt=income.next_income.budgeted_date)
-
-            for expense in expenses:
-                expense.income = None
-
-            Expense.objects.bulk_update(expenses, ['income'])
-
-            income.expense_set.add(*expenses)
-
-        self.object.save()
-
+        self.update_related_expenses()
         return valid
 
-class IncomeUpdate(UpdateView):
+
+class IncomeUpdate(UpdateRelatedExpensesMixin, UpdateView):
     model = Income
     template_name = 'cash/update-income.html'
     form_class = IncomeForm
@@ -157,6 +162,40 @@ class IncomeUpdate(UpdateView):
         if self.request.GET.get('next'):
             return reverse(self.request.GET['next'])
         return '/'
+
+    def get_form(self):
+        form_class = super().get_form_class()
+
+        if self.request.method == 'GET':
+            initial_data = {
+                'budgeted': self.object.budgeted,
+                'budgeted_date': self.object.budgeted_date,
+                'transaction': self.object.transaction,
+                'first_occurrence': self.object.first_occurrence,
+            }
+
+            if self.object.first_occurrence:
+                initial_data['recurrences'] = self.object.first_occurrence.recurrences
+            else:
+                initial_data['recurrences'] = self.object.recurrences
+
+            form = form_class(initial=initial_data)
+        else:
+            form = super().get_form()
+
+        return form
+
+    def form_valid(self, form):
+        valid = super().form_valid(form)
+
+        if self.request.POST['update_all'] == 'Yes':
+            later_occurrences = self.object.first_occurrence.income_set.filter(budgeted_date__gt=self.object.budgeted_date)
+            later_occurrences.delete()
+
+        self.object.first_occurrence = None
+        self.update_related_expenses()
+
+        return valid
 
 
 class CreateExpense(CreateView):
@@ -186,7 +225,8 @@ class CreateExpense(CreateView):
         recurrences = self.object.recurrences.between((start_dt + timedelta(days=1)),
                                                      (start_dt + timedelta(days=365)))
 
-        self.object.budgeted_date = recurrences[0].date()
+        if not self.object.budgeted_date:
+            self.object.budgeted_date = recurrences[0].date()
 
         new_expenses = []
 
@@ -196,7 +236,7 @@ class CreateExpense(CreateView):
                               budgeted_amount=self.object.budgeted_amount,
                               description=self.object.description,
                               income=income,
-                              top_expense=self.object)
+                              first_occurrence=self.object)
             new_expenses.append(expense)
 
         Expense.objects.bulk_create(new_expenses)
@@ -205,8 +245,6 @@ class CreateExpense(CreateView):
 
         if income:
             self.object.income = income
-
-            self.success_url = reverse('income-detail', kwargs={'slug': self.object.income.slug})
 
         self.object.save()
 
