@@ -80,22 +80,35 @@ class IncomeCreateBase(CreateView):
         return '/'
 
 
-class UpdateIncomeRelationsMixin(object):
-    def update_relations(self):
-        occurrences = self.get_occurrences()
-        actual_first = Income(budgeted_date=occurrences[0].date(),
-                              budgeted=self.object.budgeted,
-                              recurrences=self.object.recurrences,
-                              slug=occurrences[0].isoformat()[:10])
-
+class OccurrenceInfo(object):
+    def update_occurrence_info(self, update_series=False):
         if self.object.first_occurrence:
             first_occurrence = self.object.first_occurrence
-            actual_first.first_occurrence = first_occurrence
         else:
-            first_occurrence = actual_first
+            first_occurrence = self.object
 
-        actual_first.save()
-        created = [actual_first]
+        if update_series:
+            last_occurrence = list(first_occurrence.recurrences.occurrences())[-1]
+            self.object.recurrences = Recurrence(
+                dtstart=datetime.combine(self.object.budgeted_date, datetime.min.time()),
+                dtend=datetime.combine(last_occurrence.date(), datetime.min.time()),
+                rrules=self.object.recurrences.rrules,
+                include_dtstart=False,
+            )
+            self.object.first_occurrence = None
+            first_occurrence = self.object
+
+        occurrences = list(self.object.recurrences.occurrences())
+        self.object.budgeted_date = occurrences[0]
+
+        return occurrences, first_occurrence
+
+
+class UpdateIncomeRelationsMixin(OccurrenceInfo):
+    def update_relations(self, update_series=False):
+
+        occurrences, first_occurrence = self.update_occurrence_info(update_series=update_series)
+        self.object.save()
 
         new_income = []
 
@@ -103,25 +116,13 @@ class UpdateIncomeRelationsMixin(object):
             income = Income(budgeted_date=recurrence.date(),
                             budgeted=self.object.budgeted,
                             slug=recurrence.date().isoformat()[:10],
-                            first_occurrence=first_occurrence)
+                            first_occurrence=first_occurrence,
+                            recurrences=self.object.recurrences)
             new_income.append(income)
 
         if new_income:
-            created.extend(Income.objects.bulk_create(new_income))
-
-        self.update_expenses(created)
-
-        self.object.delete()
-
-    def get_occurrences(self):
-        occurrences_after_now = list(self.object.recurrences.occurrences())
-        after_dt = datetime.combine(self.object.budgeted_date, datetime.min.time())
-        recurrence = Recurrence(dtstart=after_dt,
-                                dtend=occurrences_after_now[-1],
-                                rrules=self.object.recurrences.rrules,
-                                include_dtstart=False)
-
-        return list(recurrence.occurrences())
+            Income.objects.bulk_create(new_income)
+            self.update_expenses(new_income)
 
     def update_expenses(self, created):
         for income in created:
@@ -215,24 +216,18 @@ class IncomeUpdate(UpdateIncomeRelationsMixin, UpdateView):
         if self.request.POST['update_all'] == 'Yes':
             later_occurrences = self.object.first_occurrence.income_set.filter(budgeted_date__gt=self.object.budgeted_date)
             later_occurrences.delete()
-            self.update_relations()
+            self.update_relations(update_series=True)
 
         return valid
 
 
-class UpdateExpenseRelationsMixin(object):
-    def update_relations(self):
-        occurrences = self.get_occurrences()
-        actual_first = self.make_new_expense(occurrences[0])
-        actual_first.recurrences = self.object.recurrences
+class UpdateExpenseRelationsMixin(OccurrenceInfo):
+    def update_relations(self, update_series=False):
 
-        if self.object.first_occurrence:
-            first_occurrence = self.object.first_occurrence
-            actual_first.first_occurrence = first_occurrence
-        else:
-            first_occurrence = actual_first
+        occurrences, first_occurrence = self.update_occurrence_info(update_series=update_series)
 
-        actual_first.save()
+        self.object.income = self.find_income(self.object.budgeted_date)
+        self.object.save()
 
         new_expenses = []
 
@@ -242,10 +237,8 @@ class UpdateExpenseRelationsMixin(object):
 
         Expense.objects.bulk_create(new_expenses)
 
-        self.object.delete()
-
-    def make_new_expense(self, occurrence, first_occurrence=None):
-        income = Income.objects.filter(budgeted_date__lte=occurrence.date()).order_by('-budgeted_date').first()
+    def find_income(self, expense_date):
+        income = Income.objects.filter(budgeted_date__lte=expense_date).order_by('-budgeted_date').first()
 
         # If we can't find an income here that means that we're back before
         # there is any income. The way to reconcile this is to just stick it
@@ -253,10 +246,14 @@ class UpdateExpenseRelationsMixin(object):
         if not income:
             income = Income.objects.order_by('budgeted_date').first()
 
+        return income
+
+    def make_new_expense(self, occurrence, first_occurrence=None):
+
         expense = Expense(budgeted_date=occurrence.date(),
                           budgeted_amount=self.object.budgeted_amount,
                           description=self.object.description,
-                          income=income,
+                          income=self.find_income(occurrence.date()),
                           first_occurrence=first_occurrence)
         return expense
 

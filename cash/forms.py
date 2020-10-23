@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from django.forms import ModelForm, Select
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from dal import autocomplete
 
@@ -12,10 +13,13 @@ class RecurrenceValidationMixin(object):
     def clean_recurrences(self):
         recurrences = self.cleaned_data['recurrences']
 
+        if not recurrences:
+            raise ValidationError("Please select a date or series of dates")
+
         # TODO: Need to validate if the end date for the recurrence is before
         # the budgeted_date
         for occurrence in recurrences.occurrences():
-            if occurrence > datetime.now() + timedelta(weeks=5200):
+            if occurrence.replace(tzinfo=None) > datetime.now() + timedelta(weeks=5200):
                 raise ValidationError('Please select an end date')
 
         return recurrences
