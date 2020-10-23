@@ -30,7 +30,7 @@ class Income(models.Model):
     def __str__(self):
         try:
             return self.budgeted_date.isoformat()[:10]
-        except AttributeError:
+        except AttributeError: # pragma: no cover
             return self.budgeted_date
 
     @property
@@ -79,14 +79,6 @@ class Income(models.Model):
             return total_expenses['total_expenses']
 
         return 0
-
-    def expense_date_range(self):
-        if self.next_income:
-            end_date = (self.next_income.budgeted_date - timedelta(days=1)).date()
-        else:
-            end_date = (self.budgeted_date + timedelta(days=14)).date()
-
-        return self.budgeted_date, end_date
 
     def save(self, **kwargs):
         self.slug = str(self)

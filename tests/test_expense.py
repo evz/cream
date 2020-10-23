@@ -10,23 +10,6 @@ from cash.models import Expense, Income
 from cash.views import UpdateIncomeRelationsMixin
 
 
-@pytest.fixture
-@pytest.mark.django_db
-def income_series(biweekly_on_friday):
-    first_occurrence = Income.objects.create(
-        budgeted=1000.0,
-        budgeted_date=datetime(2020, 10, 23, 0, 0).date(),
-        recurrences=recurrence.serialize(biweekly_on_friday)
-    )
-
-    updater = UpdateIncomeRelationsMixin()
-    updater.object = first_occurrence
-
-    updater.update_relations()
-
-    return Income.objects.all()
-
-
 @pytest.mark.django_db
 def test_create_expense(client, income_series):
     post_data = {
@@ -63,6 +46,7 @@ def test_create_monthly(client, income_series):
     assert response.url == '/'
 
     assert Expense.objects.count() == 11
+    assert Expense.objects.filter(budgeted_date='2020-10-20').first() == None
 
     incomes = Income.objects.filter(expense__isnull=False)
 
