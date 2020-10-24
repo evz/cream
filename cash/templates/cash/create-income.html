@@ -83,6 +83,7 @@ Create a new income source
                     {{ form.budgeted.as_hidden }}
                     {{ form.budgeted_date.as_hidden }}
                     {{ form.transaction.as_hidden }}
+                    <input type="hidden" name="recurrences" value="{{ rdate }}">
                 {% endif %}
                 <div class="cell">
                   <input type="submit" class="button" value="Save?" />

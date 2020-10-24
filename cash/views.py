@@ -76,27 +76,17 @@ class IncomeCreateBase(CreateView):
 
     def get_success_url(self):
         if self.request.GET.get('next'):
-            return reverse(self.request.GET['next'])
+            return self.request.GET['next']
         return '/'
 
 
 class OccurrenceInfo(object):
     def update_occurrence_info(self, update_series=False):
-        if self.object.first_occurrence:
-            first_occurrence = self.object.first_occurrence
-        else:
-            first_occurrence = self.object
-
         if update_series:
-            last_occurrence = list(first_occurrence.recurrences.occurrences())[-1]
-            self.object.recurrences = Recurrence(
-                dtstart=datetime.combine(self.object.budgeted_date, datetime.min.time()),
-                dtend=datetime.combine(last_occurrence.date(), datetime.min.time()),
-                rrules=self.object.recurrences.rrules,
-                include_dtstart=False,
-            )
             self.object.first_occurrence = None
             first_occurrence = self.object
+        else:
+            first_occurrence = self.object.first_occurrence
 
         occurrences = list(self.object.recurrences.occurrences())
         self.object.budgeted_date = occurrences[0]
@@ -140,13 +130,21 @@ class UpdateIncomeRelationsMixin(OccurrenceInfo):
 
 class IncomeCreateFromTransaction(IncomeCreateBase):
 
-    def get(self, request, *args, **kwargs):
+    def dispatch(self, request, *args, **kwargs):
         self.transaction = Transaction.objects.get(transaction_id=self.kwargs['transaction_id'])
 
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+
         try:
-            potential_income = Income.objects.get(budgeted_date=self.transaction.date_posted)
+            potential_income = Income.objects.get(budgeted_date=self.transaction.date_posted.date())
+            if request.GET.get('next'):
+                next_page = request.GET['next']
+            else:
+                next_page = reverse('income-detail', args=(potential_income.slug,))
             return redirect('{}?next={}'.format(reverse('update-income', args=[potential_income.id]),
-                                                request.GET.get('next')))
+                                                next_page))
         except Income.DoesNotExist:
             return super().get(request, *args, **kwargs)
 
@@ -157,7 +155,7 @@ class IncomeCreateFromTransaction(IncomeCreateBase):
             initial_data = {
                 'transaction': self.transaction,
                 'budgeted': abs(self.transaction.amount),
-                'budgeted_date': self.transaction.date_posted.date
+                'budgeted_date': self.transaction.date_posted.date()
             }
             form = form(initial=initial_data)
         else:
@@ -168,6 +166,7 @@ class IncomeCreateFromTransaction(IncomeCreateBase):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['transaction'] = self.transaction
+        context['rdate'] = 'RDATE:{}'.format(self.transaction.date_posted.strftime('%Y%m%dT050000Z'))
         return context
 
 
@@ -185,7 +184,7 @@ class IncomeUpdate(UpdateIncomeRelationsMixin, UpdateView):
 
     def get_success_url(self):
         if self.request.GET.get('next'):
-            return reverse(self.request.GET['next'])
+            return self.request.GET['next']
         return '/'
 
     def get_form(self):
@@ -213,7 +212,7 @@ class IncomeUpdate(UpdateIncomeRelationsMixin, UpdateView):
     def form_valid(self, form):
         valid = super().form_valid(form)
 
-        if self.request.POST['update_all'] == 'Yes':
+        if self.request.POST.get('update_all', 'No') == 'Yes':
             later_occurrences = self.object.first_occurrence.income_set.filter(budgeted_date__gt=self.object.budgeted_date)
             later_occurrences.delete()
             self.update_relations(update_series=True)
@@ -274,12 +273,19 @@ class CreateExpense(UpdateExpenseRelationsMixin, CreateView):
     form_class = ExpenseForm
     success_url = '/'
 
+    def dispatch(self, request, *args, **kwargs):
+        self.transaction = None
+
+        if self.request.GET.get('transaction_id'):
+            self.transaction = Transaction.objects.get(transaction_id=self.request.GET['transaction_id'])
+
+        return super().dispatch(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        if self.request.GET.get('transaction_id'):
-            transaction = Transaction.objects.get(transaction_id=self.request.GET['transaction_id'])
-            context['transaction'] = transaction
+        if self.transaction:
+            context['transaction'] = self.transaction
 
         return context
 
@@ -287,6 +293,12 @@ class CreateExpense(UpdateExpenseRelationsMixin, CreateView):
         valid = super().form_valid(form)
         self.update_relations()
         return valid
+
+    def get_success_url(self):
+        if self.transaction:
+            return reverse('incoming-transactions')
+
+        return super().get_success_url()
 
 
 class UpdateExpense(UpdateExpenseRelationsMixin, UpdateView):
@@ -324,10 +336,20 @@ class UpdateExpense(UpdateExpenseRelationsMixin, UpdateView):
     def form_valid(self, form):
         valid = super().form_valid(form)
 
-        if self.request.POST['update_all'] == 'Yes':
-            later_occurrences = self.object.first_occurrence.expense_set.filter(budgeted_date__gt=self.object.budgeted_date)
+        update_series = False
+
+        if self.request.POST.get('update_all', 'No') == 'Yes':
+
+            update_series = True
+
+            if self.object.first_occurrence:
+                later_occurrences = self.object.first_occurrence.expense_set.filter(budgeted_date__gt=self.object.budgeted_date)
+            else:
+                later_occurrences = self.object.expense_set.filter(budgeted_date__gt=self.object.budgeted_date)
+
             later_occurrences.delete()
-            self.update_relations()
+
+        self.update_relations(update_series=update_series)
 
         return valid
 

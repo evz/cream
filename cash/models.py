@@ -152,9 +152,8 @@ class Transaction(models.Model):
     @classmethod
     def maybe_paychecks(self):
         return Transaction.objects.filter(transaction_type='DIRECTDEP')\
-                                  .filter(Q(memo__icontains="paypal") | Q(memo__icontains="mcgraw-hill"))\
-                                  .exclude(Q(memo__icontains="edi") | Q(memo__icontains="paypal transfer"))\
                                   .order_by('date_posted')
+
 
 class FinancialInstitution(models.Model):
     name = models.CharField(max_length=255)
