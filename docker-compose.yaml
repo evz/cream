@@ -1,13 +1,17 @@
 version: '3'
 services:
   nginx:
-    image: "nginx:latest"
+    image: "jonasal/nginx-certbot:4"
+    environment:
+      - CERTBOT_EMAIL=eric@e-vz.com
     volumes:
       - static_files:/usr/share/nginx/cream/static:ro
-      - ./configs/nginx.conf:/etc/nginx/conf.d/cream.conf
+      - ./configs/nginx.conf:/etc/nginx/user_conf.d/cream.conf:ro
+      - nginx_secrets:/etc/letsencrypt
       - .:/code
     ports:
-      - "8080:80"
+      - "80:80"
+      - "443:443"
   web:
     build: .
     ports:
@@ -31,3 +35,4 @@ volumes:
   postgresql:
   postgresql_data:
   static_files:
+  nginx_secrets:
